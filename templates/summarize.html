@@ -1,0 +1,57 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}Summary: {{ note.title }}{% endblock %}
+{% block header_title %}AI Summary Generator{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <!-- Card -->
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-6">
+
+    <!-- Top accent stripe -->
+    <div class="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-violet-500"></div>
+
+    <!-- Card header -->
+    <div class="flex items-center gap-4 px-6 py-5 border-b border-slate-100">
+      <div class="w-12 h-12 bg-amber-50 border border-amber-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">📝</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-0.5">
+          <h1 class="font-black text-slate-900 text-lg">AI Summary</h1>
+          <span class="text-[10px] bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+            ⚡ NVIDIA NIM
+          </span>
+        </div>
+        <p class="text-slate-400 text-sm truncate"><i class="fas fa-file-pdf text-red-400 mr-1.5"></i>{{ note.title }}</p>
+      </div>
+    </div>
+
+    <!-- Summary content -->
+    <div class="px-6 py-6">
+      {% if summary.startswith('AI Error:') %}
+      <div class="flex items-start gap-3 bg-red-50 border border-red-100 rounded-xl px-4 py-4">
+        <i class="fas fa-exclamation-triangle text-red-400 mt-0.5 flex-shrink-0"></i>
+        <div>
+          <p class="font-semibold text-red-700 text-sm mb-1">AI Summary Failed</p>
+          <p class="text-red-500 text-xs">{{ summary }}</p>
+          <p class="text-xs text-slate-400 mt-2">Make sure your <code class="bg-slate-100 px-1 rounded">NVIDIA_API_KEY</code> is set correctly in your <code class="bg-slate-100 px-1 rounded">.env</code> file.</p>
+        </div>
+      </div>
+      {% else %}
+      <div class="text-slate-700 text-sm leading-loose whitespace-pre-wrap">{{ summary }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex flex-wrap gap-3">
+    <a href="{{ url_for('student.student_dashboard') }}"
+      class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-5 py-2.5 rounded-xl text-sm transition-all">
+      <i class="fas fa-arrow-left text-xs"></i> Back to Dashboard
+    </a>
+    <a href="{{ url_for('ai.quiz', note_id=note.id) }}"
+      class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all shadow-sm">
+      <i class="fas fa-gamepad text-xs"></i> Take Quiz on This
+    </a>
+  </div>
+
+</div>
+{% endblock %}

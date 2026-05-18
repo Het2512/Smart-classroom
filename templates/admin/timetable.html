@@ -1,0 +1,126 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Manage Timetable{% endblock %}
+{% block header_title %}Timetable Directory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">Timetable Management</h1>
+</div>
+
+<div class="admin-stats-grid" style="grid-template-columns: 1fr 2fr;">
+    <!-- Add Timetable Slot Form -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Create Slot</h2>
+        </div>
+        <div style="padding: 1.5rem;">
+            <form action="{{ url_for('admin.timetable') }}" method="POST">
+                <div class="admin-form-group">
+                    <label class="admin-label">Classroom</label>
+                    <select name="classroom_id" class="admin-input text-sm" required>
+                        <option value="">-- Select Classroom --</option>
+                        {% for classroom in classrooms %}
+                        <option value="{{ classroom.id }}">{{ classroom.name }} ({{ classroom.semester }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Subject</label>
+                    <input type="text" name="subject_name" class="admin-input text-sm" placeholder="Enter Subject Name" required>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Day of Week</label>
+                    <select name="day" class="admin-input text-sm" required>
+                        <option value="">-- Select Day --</option>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                </div>
+                <div class="admin-form-group flex gap-2">
+                    <div class="flex-1">
+                        <label class="admin-label">Start Time</label>
+                        <input type="time" name="start_time" class="admin-input" required>
+                    </div>
+                    <div class="flex-1">
+                        <label class="admin-label">End Time</label>
+                        <input type="time" name="end_time" class="admin-input" required>
+                    </div>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Session Type</label>
+                    <select name="session_type" class="admin-input text-sm" required>
+                        <option value="lecture">Lecture</option>
+                        <option value="lab">Lab</option>
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Batch (for Lab only)</label>
+                    <select name="batch" class="admin-input text-sm">
+                        <option value="">-- N/A (Lecture) --</option>
+                        <option value="A">Batch A</option>
+                        <option value="B">Batch B</option>
+                        <option value="C">Batch C</option>
+                    </select>
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%; margin-top: 1rem;">Add Slot</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Timetable Slots List -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">All Slots</h2>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Classroom</th>
+                        <th>Subject</th>
+                        <th>Day</th>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Batch</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for slot in slots %}
+                    <tr>
+                        <td style="font-weight: 500;">{{ slot.classroom.name if slot.classroom else '-' }}</td>
+                        <td>{{ slot.subject.name if slot.subject else '-' }}</td>
+                        <td>{{ slot.day_of_week }}</td>
+                        <td>{{ slot.start_time.strftime('%I:%M %p') }} - {{ slot.end_time.strftime('%I:%M %p') }}</td>
+                        <td>
+                            {% if slot.session_type == 'lab' %}
+                            <span style="font-size:0.7rem;font-weight:700;background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:999px;">Lab</span>
+                            {% else %}
+                            <span style="font-size:0.7rem;font-weight:700;background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:999px;">Lecture</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ slot.batch or '—' }}</td>
+                        <td>
+                            <form action="{{ url_for('admin.delete_timetable', id=slot.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this slot?');">
+                                <button type="submit" class="admin-btn admin-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">No timetable slots found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

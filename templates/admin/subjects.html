@@ -1,0 +1,102 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Manage Subjects{% endblock %}
+{% block header_title %}Subjects Directory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">Active Subjects</h1>
+</div>
+
+<div class="admin-stats-grid" style="grid-template-columns: 1fr 2fr;">
+    <!-- Add Subject Form -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Create New Subject</h2>
+        </div>
+        <div style="padding: 1.5rem;">
+            <form action="{{ url_for('admin.subjects') }}" method="POST">
+                <div class="admin-form-group">
+                    <label class="admin-label">Subject Name</label>
+                    <input type="text" name="name" class="admin-input" placeholder="e.g. Data Structures" required>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Subject Code</label>
+                    <input type="text" name="code" class="admin-input" placeholder="e.g. CS101" required>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Assign to Semester</label>
+                    <select name="semester" class="admin-input text-sm" required>
+                        <option value="">-- Select Semester --</option>
+                        {% for sem in semesters %}
+                        <option value="{{ sem }}">{{ sem }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="admin-form-group mb-4">
+                    <label class="admin-label">Assign Teacher</label>
+                    <select name="teacher_id" class="admin-input text-sm" required>
+                        <option value="">-- Select Teacher --</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%;">Create Subject</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Subjects List -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Subjects List</h2>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Semester</th>
+                        <th>Teacher</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in subjects %}
+                    <tr>
+                        <td style="font-weight: bold; color: var(--admin-text);">{{ subject.code }}</td>
+                        <td style="font-weight: 500;">{{ subject.name }}</td>
+                        <td>
+                            {% if subject.semester %}
+                            <span
+                                style="background:#ede9fe;color:#6d28d9;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:999px;">
+                                {{ subject.semester }}
+                            </span>
+                            {% else %}
+                            <span style="color:#94a3b8;font-size:0.75rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ subject.teacher.name if subject.teacher else '-' }}</td>
+                        <td>
+                            <form action="{{ url_for('admin.delete_subject', id=subject.id) }}" method="POST"
+                                style="display:inline;"
+                                onsubmit="return confirm('Are you sure you want to delete this subject?');">
+                                <button type="submit" class="admin-btn admin-btn-danger"
+                                    style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">No
+                            subjects found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Grade Exam: {{ exam.title }}{% endblock %}
+{% block header_title %}Grading: {{ exam.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">Grade Exam</h1>
+    <a href="{{ url_for('teacher.teacher_exams') }}" class="admin-btn admin-btn-secondary"><i class="fas fa-arrow-left"></i> Back to Exams</a>
+</div>
+
+<div class="admin-card mb-6">
+    <div class="admin-card-header bg-slate-50 border-b border-slate-200 p-4">
+        <h2 class="admin-card-title text-lg">Exam Information</h2>
+    </div>
+    <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div>
+            <p class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Title</p>
+            <p class="font-semibold text-slate-800">{{ exam.title }}</p>
+        </div>
+        <div>
+            <p class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Subject</p>
+            <p class="font-semibold text-slate-800">{{ exam.subject.name }} ({{ exam.subject.code }})</p>
+        </div>
+        <div>
+            <p class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Semester</p>
+            <p class="font-semibold text-slate-800">{{ exam.semester }}</p>
+        </div>
+        <div>
+            <p class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Total Marks</p>
+            <p class="font-bold text-indigo-600 text-lg">{{ exam.total_marks }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h2 class="admin-card-title">Student Roster</h2>
+    </div>
+    
+    {% if exam.is_published %}
+    <div class="p-4 bg-amber-50 border-b border-amber-200 text-amber-800 text-sm font-semibold flex items-center gap-2">
+        <i class="fas fa-lock"></i>
+        <span>This exam is published. Grades are visible to students. Please consult the admin before making changes.</span>
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Email</th>
+                        <th style="width: 150px;">Marks Obtained</th>
+                        <th>Remarks (Optional)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    {% set result = results_map.get(student.id) %}
+                    <tr>
+                        <td style="font-weight: 500;">{{ student.name }}</td>
+                        <td style="color: var(--admin-text-muted);">{{ student.email }}</td>
+                        <td>
+                            <input type="number" name="marks_{{ student.id }}" 
+                                   value="{{ result.marks_obtained if result else '' }}" 
+                                   max="{{ exam.total_marks }}" min="0" 
+                                   class="admin-input" style="width: 100px;" placeholder="0-{{ exam.total_marks }}">
+                        </td>
+                        <td>
+                            <input type="text" name="remarks_{{ student.id }}" 
+                                   value="{{ result.remarks if result and result.remarks else '' }}" 
+                                   class="admin-input w-full" placeholder="Excellent, needs improvement, etc.">
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">No students found in this semester.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="p-4 border-t border-slate-200 flex justify-end">
+            <button type="submit" class="admin-btn admin-btn-success" style="padding: 0.5rem 1.5rem; font-size: 1rem;">
+                <i class="fas fa-save mr-2"></i> Save Grades
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

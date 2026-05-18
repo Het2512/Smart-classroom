@@ -1,0 +1,35 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block header_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="admin-page-title">Dashboard Overview</h1>
+
+<div class="admin-stats-grid">
+    <div class="admin-stat-card" style="border-top: 4px solid var(--admin-primary);">
+        <div class="admin-stat-title">Total Teachers</div>
+        <div class="admin-stat-value">{{ teachers_count }}</div>
+    </div>
+    
+    <div class="admin-stat-card" style="border-top: 4px solid var(--admin-success);">
+        <div class="admin-stat-title">Total Students</div>
+        <div class="admin-stat-value">{{ students_count }}</div>
+    </div>
+    
+    <div class="admin-stat-card" style="border-top: 4px solid #f59e0b;">
+        <div class="admin-stat-title">Active Classrooms</div>
+        <div class="admin-stat-value">{{ classrooms_count }}</div>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h2 class="admin-card-title">Quick Actions</h2>
+    </div>
+    <div style="padding: 1.5rem; display: flex; gap: 1rem;">
+        <a href="{{ url_for('admin.teachers') }}" class="admin-btn admin-btn-primary">Manage Teachers</a>
+        <a href="{{ url_for('admin.students') }}" class="admin-btn admin-btn-primary">Manage Students</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}Quiz: {{ note.title }}{% endblock %}
+{% block header_title %}AI Quiz Generator{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center gap-4 bg-white border border-slate-200 rounded-2xl p-5 mb-6 shadow-sm">
+    <div class="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">🎮</div>
+    <div class="flex-1">
+      <h1 class="font-black text-slate-900 text-lg">Quiz Time!</h1>
+      <p class="text-slate-400 text-sm">{{ note.title }}</p>
+    </div>
+    {% if questions %}
+    <div class="text-center bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2">
+      <p class="text-xl font-black text-emerald-600">{{ questions|length }}</p>
+      <p class="text-[10px] text-emerald-500 font-medium uppercase tracking-wide">Questions</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if questions %}
+  <div id="quiz" class="space-y-4 mb-6">
+    {% for q in questions %}
+    <div class="bg-white border border-slate-100 rounded-xl p-5 shadow-sm hover:border-emerald-100 transition-all">
+      <div class="flex items-start gap-3 mb-4">
+        <span class="w-7 h-7 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-black rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">{{ loop.index }}</span>
+        <p class="font-semibold text-slate-800 text-sm leading-relaxed">{{ q.question }}</p>
+      </div>
+      <div class="space-y-2 pl-10">
+        {% for opt in q.options %}
+        <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50 hover:border-emerald-300 hover:bg-emerald-50 cursor-pointer transition-all has-[:checked]:border-emerald-400 has-[:checked]:bg-emerald-50">
+          <input type="radio" name="q{{ loop.index0 }}" value="{{ opt[0] }}" data-correct="{{ q.answer }}" class="w-4 h-4 accent-emerald-500 flex-shrink-0">
+          <span class="text-slate-700 text-sm">{{ opt }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="flex flex-wrap gap-3 mb-8">
+    <button onclick="check()"
+      class="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-sm hover:-translate-y-0.5">
+      <i class="fas fa-check-circle text-xs"></i> Submit Quiz
+    </button>
+    <a href="{{ url_for('student.student_dashboard') }}"
+      class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-6 py-2.5 rounded-xl text-sm transition-all">
+      <i class="fas fa-arrow-left text-xs"></i> Back
+    </a>
+  </div>
+
+  <div id="result" class="hidden"></div>
+
+  <script>
+  function check(){
+    const total=parseInt("{{ questions|length }}", 10);
+    const inputs=document.querySelectorAll('input[type=radio]:checked');
+    let score=0;
+    inputs.forEach(i=>{if(i.value===i.dataset.correct)score++;});
+    const pct=Math.round((score/total)*100);
+    const emoji=pct>=80?'🏆':pct>=50?'👍':'📚';
+    const msg=pct>=80?'Excellent!':pct>=50?'Good Job!':'Keep Practicing!';
+    const bg=pct>=80?'bg-emerald-50 border-emerald-200':pct>=50?'bg-amber-50 border-amber-200':'bg-slate-50 border-slate-200';
+    const col=pct>=80?'text-emerald-600':pct>=50?'text-amber-600':'text-slate-600';
+    const r=document.getElementById('result');
+    r.classList.remove('hidden');
+    r.innerHTML=`<div class="bg-white border-2 ${bg.split(' ')[1]} rounded-2xl p-8 text-center shadow-sm">
+      <div class="text-5xl mb-3">${emoji}</div>
+      <p class="font-black text-slate-900 text-xl mb-1">${msg}</p>
+      <div class="text-5xl font-black ${col} my-4">${score}<span class="text-2xl text-slate-300 font-semibold"> / ${total}</span></div>
+      <p class="text-slate-500 text-sm">You scored <strong>${pct}%</strong></p>
+    </div>`;
+    r.scrollIntoView({behavior:'smooth'});
+  }
+  </script>
+
+  {% else %}
+  <div class="text-center py-16 bg-white border border-slate-100 rounded-2xl shadow-sm">
+    <i class="fas fa-exclamation-triangle text-amber-400 text-4xl mb-3 block"></i>
+    <h3 class="font-bold text-slate-700 mb-1">Quiz couldn't be generated</h3>
+    <p class="text-slate-400 text-sm mb-5">Try a PDF with more readable text content.</p>
+    <a href="{{ url_for('student.student_dashboard') }}"
+      class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all">
+      <i class="fas fa-arrow-left text-xs"></i> Back to Dashboard
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

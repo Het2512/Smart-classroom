@@ -1,0 +1,59 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}My Timetable{% endblock %}
+{% block header_title %}Class Timetable{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">Weekly Schedule</h1>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h2 class="admin-card-title">My Class Timetable</h2>
+    </div>
+    <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for day in days_order %}
+            {% set slots = timetable_map[day] %}
+            {% if slots %}
+            <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                <div class="bg-indigo-50 border-b border-slate-200 p-3">
+                    <h3 class="font-bold text-indigo-900">{{ day }}</h3>
+                </div>
+                <div class="p-0">
+                    {% for slot in slots %}
+                    <div class="p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">{{ slot.subject.name }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5"><i class="fas fa-user-tie mr-1"></i> {{ slot.subject.teacher.name }}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md font-semibold font-mono">
+                                    {{ slot.start_time.strftime('%H:%M') }} - {{ slot.end_time.strftime('%H:%M') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+        
+        {% set has_slots = false %}
+        {% for day in days_order %}
+            {% if timetable_map[day] %}
+                {% set has_slots = true %}
+            {% endif %}
+        {% endfor %}
+        
+        {% if not has_slots %}
+        <div class="col-span-full text-center p-8 text-slate-500">
+            <i class="fas fa-calendar-times text-4xl mb-3 text-slate-300"></i>
+            <p>No timetable slots have been assigned to your classroom yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

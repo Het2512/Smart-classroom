@@ -1,0 +1,146 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}My Attendance{% endblock %}
+{% block header_title %}My Attendance{% endblock %}
+{% block content %}
+
+<div class="mb-6">
+  <div class="flex items-center gap-3 flex-wrap">
+    <div class="flex-1">
+      <p class="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-0.5">Attendance Record</p>
+      <h1 class="text-2xl font-black text-slate-900">My Attendance</h1>
+      {% if classroom %}
+      <p class="text-slate-500 text-sm mt-0.5">{{ classroom.name }} &middot; {{ classroom.semester }}</p>
+      {% endif %}
+    </div>
+    <a href="{{ url_for('student.student_dashboard') }}"
+       class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 py-2 rounded-xl text-sm transition-all">
+      <i class="fas fa-arrow-left text-xs"></i> Dashboard
+    </a>
+  </div>
+</div>
+
+{% if not classroom %}
+<div class="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-amber-100">
+  <i class="fas fa-exclamation-triangle text-4xl text-amber-300 mb-3 block"></i>
+  <p class="font-semibold text-amber-600">Not assigned to a classroom yet</p>
+  <p class="text-xs text-slate-400 mt-1">Ask your admin to assign you to a semester and classroom.</p>
+</div>
+
+{% elif not subject_stats %}
+<div class="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-slate-100">
+  <i class="fas fa-clipboard-list text-4xl text-slate-200 mb-3 block"></i>
+  <p class="font-semibold text-slate-400">No attendance recorded yet</p>
+  <p class="text-xs text-slate-300 mt-1">Your teacher hasn't marked attendance for any sessions yet.</p>
+</div>
+
+{% else %}
+
+<!-- Legend -->
+<div class="flex flex-wrap gap-3 mb-5">
+  <span class="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> ≥ 75% — Safe
+  </span>
+  <span class="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
+    <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> 65–74% — Warning
+  </span>
+  <span class="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 px-3 py-1.5 rounded-full">
+    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> &lt; 65% — Defaulter Risk
+  </span>
+</div>
+
+<!-- Defaulter banner -->
+{% set defaulters = subject_stats | selectattr('is_defaulter') | list %}
+{% if defaulters %}
+<div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 mb-5">
+  <i class="fas fa-exclamation-circle text-red-500 text-lg mt-0.5 flex-shrink-0"></i>
+  <div>
+    <p class="font-bold text-red-700 text-sm mb-0.5">⚠ Attendance Shortage in {{ defaulters|length }} subject{{ 's' if defaulters|length > 1 else '' }}</p>
+    <p class="text-xs text-red-500">You are below 75% in the highlighted subjects. Attend more classes to avoid being barred from exams.</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Subject stats table -->
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+  <div class="h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500"></div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-slate-50 border-b border-slate-100">
+          <th class="text-left text-xs font-semibold text-slate-500 px-5 py-3">Subject</th>
+          <th class="text-center text-xs font-semibold text-slate-500 px-4 py-3">Held</th>
+          <th class="text-center text-xs font-semibold text-emerald-600 px-4 py-3">Present</th>
+          <th class="text-center text-xs font-semibold text-red-500 px-4 py-3">Absent</th>
+          <th class="text-center text-xs font-semibold text-slate-500 px-4 py-3">Attendance %</th>
+          <th class="text-center text-xs font-semibold text-slate-500 px-4 py-3">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in subject_stats %}
+        {% set pct = s.pct %}
+        <tr class="border-b border-slate-50 hover:bg-slate-50/60 transition-colors
+          {% if pct < 65 %}bg-red-50/40{% elif pct < 75 %}bg-amber-50/40{% endif %}">
+
+          <td class="px-5 py-3.5">
+            {% if s.subject %}
+            <p class="font-semibold text-slate-800">{{ s.subject.name }}</p>
+            <p class="text-xs text-slate-400">{{ s.subject.code }}</p>
+            {% else %}
+            <span class="text-slate-400 text-xs">Unknown Subject</span>
+            {% endif %}
+          </td>
+
+          <td class="px-4 py-3.5 text-center font-bold text-slate-700">{{ s.total }}</td>
+
+          <td class="px-4 py-3.5 text-center">
+            <span class="font-bold text-emerald-600">{{ s.present }}</span>
+          </td>
+
+          <td class="px-4 py-3.5 text-center">
+            <span class="font-bold {% if s.absent > 0 %}text-red-500{% else %}text-slate-300{% endif %}">{{ s.absent }}</span>
+          </td>
+
+          <td class="px-4 py-3.5">
+            <!-- Progress bar -->
+            <div class="flex items-center gap-2">
+              <div class="flex-1 bg-slate-100 rounded-full h-2 min-w-[60px]">
+                <div class="h-2 rounded-full transition-all
+                  {% if pct >= 75 %}bg-emerald-500{% elif pct >= 65 %}bg-amber-400{% else %}bg-red-500{% endif %}"
+                  style="width: {{ [pct, 100] | min }}%"></div>
+              </div>
+              <span class="text-xs font-black w-12 text-right
+                {% if pct >= 75 %}text-emerald-600{% elif pct >= 65 %}text-amber-600{% else %}text-red-600{% endif %}">
+                {{ pct }}%
+              </span>
+            </div>
+          </td>
+
+          <td class="px-4 py-3.5 text-center">
+            {% if pct >= 75 %}
+            <span class="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full">✓ Safe</span>
+            {% elif pct >= 65 %}
+            <span class="text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full">⚠ Warning</span>
+            {% else %}
+            <span class="text-xs font-bold bg-red-50 text-red-600 border border-red-200 px-2.5 py-1 rounded-full">✗ Defaulter</span>
+            {% endif %}
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer summary -->
+  <div class="px-5 py-3 bg-slate-50 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-500">
+    <span>{{ subject_stats|length }} subjects tracked</span>
+    {% set safe_count = subject_stats | rejectattr('is_defaulter') | list | length %}
+    <span class="text-emerald-600 font-semibold">{{ safe_count }} safe</span>
+    {% if defaulters %}
+    <span class="text-red-500 font-semibold">{{ defaulters|length }} below 75%</span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

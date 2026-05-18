@@ -1,0 +1,31 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Settings{% endblock %}
+{% block header_title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">System Settings</h1>
+</div>
+
+<div class="admin-card" style="max-width: 600px;">
+    <div class="admin-card-header">
+        <h2 class="admin-card-title">Security Settings</h2>
+    </div>
+    <div style="padding: 1.5rem;">
+        <form action="{{ url_for('admin.settings') }}" method="POST">
+            <div class="admin-form-group">
+                <label class="admin-label">Faculty Registration Code</label>
+                <p style="font-size: 0.875rem; color: var(--admin-text-muted); margin-bottom: 0.5rem; margin-top: 0;">
+                    This code is required for new teachers to register an account.
+                </p>
+                <input type="text" name="faculty_code" class="admin-input" value="{{ faculty_code }}" required>
+            </div>
+            
+            <button type="submit" class="admin-btn admin-btn-primary" style="margin-top: 1rem;">
+                Save Changes
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Manage Teachers{% endblock %}
+{% block header_title %}Manage Teachers{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">Teachers Directory</h1>
+</div>
+
+<div class="admin-stats-grid" style="grid-template-columns: 1fr 2fr;">
+    <!-- Add Teacher Form -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Add New Teacher</h2>
+        </div>
+        <div style="padding: 1.5rem;">
+            <form action="{{ url_for('admin.teachers') }}" method="POST">
+                <div class="admin-form-group">
+                    <label class="admin-label">Name</label>
+                    <input type="text" name="name" class="admin-input" required>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Username</label>
+                    <input type="text" name="email" class="admin-input" required placeholder="e.g. teacher_username">
+                </div>
+                <div class="admin-form-group mb-4">
+                    <label class="admin-label">Password</label>
+                    <input type="password" name="password" class="admin-input" required>
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%;">Create Teacher</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Teacher List -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">All Teachers</h2>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Password</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for teacher in teachers %}
+                    <tr>
+                        <td>#{{ teacher.id }}</td>
+                        <td style="font-weight: 500;">{{ teacher.name }}</td>
+                        <td style="color: var(--admin-text-muted);">{{ teacher.email }}</td>
+                        <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;font-weight:600;color:#0f172a;">{{ teacher.plain_password or 'password123' }}</code></td>
+                        <td>
+                            <form action="{{ url_for('admin.delete_teacher', id=teacher.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this teacher?');">
+                                <button type="submit" class="admin-btn admin-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">No teachers found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

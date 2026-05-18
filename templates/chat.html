@@ -1,0 +1,80 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}AI Doubt Solver{% endblock %}
+{% block header_title %}AI Assistant{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+  <!-- Chat card -->
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50">
+      <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-xl flex-shrink-0">🤖</div>
+      <div class="flex-1">
+        <p class="font-bold text-slate-800 text-sm">AI Doubt Solver</p>
+        <p class="text-xs text-slate-400">Powered by Groq LLaMA 3.3-70B</p>
+      </div>
+      <div class="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+        <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> Online
+      </div>
+    </div>
+
+    <!-- Suggestion chips -->
+    <div class="flex gap-2 px-5 py-3 border-b border-slate-100 overflow-x-auto no-bar">
+      <button onclick="setQ('Explain this concept simply: ')" class="flex-shrink-0 text-xs bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 hover:border-indigo-200 text-slate-600 px-3 py-1.5 rounded-full font-medium transition-all">💡 Explain concept</button>
+      <button onclick="setQ('Key points of ')" class="flex-shrink-0 text-xs bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 hover:border-indigo-200 text-slate-600 px-3 py-1.5 rounded-full font-medium transition-all">🔑 Key points</button>
+      <button onclick="setQ('Give me an example of ')" class="flex-shrink-0 text-xs bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 hover:border-indigo-200 text-slate-600 px-3 py-1.5 rounded-full font-medium transition-all">📝 Examples</button>
+      <button onclick="setQ('Difference between ')" class="flex-shrink-0 text-xs bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200 hover:border-indigo-200 text-slate-600 px-3 py-1.5 rounded-full font-medium transition-all">⚖️ Compare</button>
+    </div>
+
+    <!-- Messages -->
+    <div id="chatbox" class="h-96 overflow-y-auto p-5 space-y-4 bg-slate-50/50" style="scroll-behavior:smooth;">
+      <div class="flex gap-2.5 items-end">
+        <div class="w-7 h-7 bg-indigo-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">🤖</div>
+        <div class="max-w-[82%] bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 text-slate-700 text-sm leading-relaxed shadow-sm">
+          👋 Hi! I'm your AI study assistant. Ask me anything — concepts, doubts, formulas, or examples!
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="border-t border-slate-100 bg-white p-4">
+      <div class="flex gap-2.5 items-center bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 focus-within:border-indigo-400 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.08)] transition-all">
+        <input id="q" class="flex-1 bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none py-1" placeholder="Type your question..." onkeypress="if(event.key==='Enter')ask()" autocomplete="off">
+        <button onclick="ask()" class="w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center transition-all flex-shrink-0">
+          <i class="fas fa-paper-plane text-[11px]"></i>
+        </button>
+      </div>
+      <p class="text-[10px] text-slate-300 text-center mt-2">AI responses may not always be accurate · Powered by Groq</p>
+    </div>
+  </div>
+
+  <div class="text-center mt-5">
+    <a href="{{ url_for('student.student_dashboard') }}" class="text-xs text-slate-400 hover:text-indigo-500 transition-colors font-medium">
+      <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+    </a>
+  </div>
+</div>
+
+<script>
+function setQ(t) { const el = document.getElementById('q'); el.value = t; el.focus(); }
+function ask() {
+  const input = document.getElementById('q');
+  const q = input.value.trim(); if (!q) return;
+  const box = document.getElementById('chatbox');
+  box.innerHTML += `<div class="flex gap-2.5 items-end justify-end"><div class="max-w-[82%] bg-indigo-600 text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed shadow-sm">${q}</div><div class="w-7 h-7 bg-slate-200 rounded-xl flex items-center justify-center text-sm flex-shrink-0">🧑</div></div>`;
+  input.value = '';
+  box.innerHTML += `<div class="flex gap-2.5 items-end" id="loading"><div class="w-7 h-7 bg-indigo-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">🤖</div><div class="bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm flex gap-1.5 items-center"><span class="w-2 h-2 bg-indigo-300 rounded-full d1 inline-block"></span><span class="w-2 h-2 bg-indigo-400 rounded-full d2 inline-block"></span><span class="w-2 h-2 bg-indigo-500 rounded-full d3 inline-block"></span></div></div>`;
+  box.scrollTop = box.scrollHeight;
+  fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q})})
+  .then(r=>r.json()).then(d=>{
+    document.getElementById('loading').remove();
+    box.innerHTML += `<div class="flex gap-2.5 items-end"><div class="w-7 h-7 bg-indigo-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">🤖</div><div class="max-w-[82%] bg-white border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 text-slate-700 text-sm leading-relaxed shadow-sm whitespace-pre-wrap">${d.answer}</div></div>`;
+    box.scrollTop = box.scrollHeight;
+  }).catch(()=>{
+    document.getElementById('loading').remove();
+    box.innerHTML += `<div class="text-xs text-red-400 text-center py-2">⚠️ Something went wrong. Please try again.</div>`;
+  });
+}
+</script>
+{% endblock %}

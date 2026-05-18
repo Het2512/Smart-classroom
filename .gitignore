@@ -1,0 +1,40 @@
+# Environment variables (NEVER commit real secrets)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Database files (use MySQL instead)
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Uploaded files (user content)
+static/uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

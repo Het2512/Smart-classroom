@@ -1,0 +1,298 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block header_title %}Teacher Dashboard{% endblock %}
+{% block content %}
+<!-- Page header -->
+<div class="mb-7">
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <p class="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-0.5">Teacher Dashboard</p>
+      <h1 class="text-2xl font-black text-slate-900">Welcome, {{ current_user.name }} 👋</h1>
+      <p class="text-slate-500 text-sm mt-0.5">Manage your classrooms, notes, notices and students.</p>
+    </div>
+    <!-- Create Classroom button -->
+    <button onclick="document.getElementById('modal-create').classList.remove('hidden')"
+      class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm">
+      <i class="fas fa-plus text-xs"></i> New Classroom
+    </button>
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-7">
+  <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+    <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-chalkboard text-indigo-500"></i>
+    </div>
+    <div>
+      <div class="text-2xl font-black text-slate-900">{{ classrooms|length }}</div>
+      <div class="text-xs text-slate-400 font-medium">Classrooms</div>
+    </div>
+  </div>
+  <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+    <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-users text-emerald-500"></i>
+    </div>
+    <div>
+      <div class="text-2xl font-black text-slate-900">{{ students|length }}</div>
+      <div class="text-xs text-slate-400 font-medium">Students</div>
+    </div>
+  </div>
+  <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+    <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-file-pdf text-indigo-500"></i>
+    </div>
+    <div>
+      <div class="text-2xl font-black text-slate-900">{{ notes|length }}</div>
+      <div class="text-xs text-slate-400 font-medium">Notes</div>
+    </div>
+  </div>
+  <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+    <div class="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-bullhorn text-pink-500"></i>
+    </div>
+    <div>
+      <div class="text-2xl font-black text-slate-900">{{ notices|length }}</div>
+      <div class="text-xs text-slate-400 font-medium">Notices</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main grid: classrooms by semester (left) + global notices (right) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <!-- LEFT: Classrooms grouped by semester -->
+  <div class="lg:col-span-2 space-y-6">
+
+    {% for sem in semesters %}
+      {% if sem_map and sem in sem_map %}
+      <div id="sem-{{ sem|replace(' ', '-') }}">
+        <!-- Semester header -->
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-layer-group text-white text-xs"></i>
+          </div>
+          <h2 class="font-black text-slate-800 text-base">{{ sem }}</h2>
+          <span class="text-xs font-bold bg-violet-50 text-violet-600 border border-violet-100 px-2 py-0.5 rounded-full">
+            {{ sem_map[sem]|length }} classroom{{ 's' if sem_map[sem]|length != 1 else '' }}
+          </span>
+          <div class="flex-1 h-px bg-slate-100"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {% for c in sem_map[sem] %}
+          <a href="{{ url_for('teacher.view_classroom', classroom_id=c.id) }}"
+             class="card-lift block bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-5 transition-all group">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 group-hover:bg-indigo-700 transition-colors">
+                {{ c.name[0].upper() }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="font-bold text-slate-900 truncate">{{ c.name }}</p>
+                {% if c.description %}
+                <p class="text-xs text-slate-400 truncate">{{ c.description }}</p>
+                {% endif %}
+              </div>
+              <i class="fas fa-arrow-right text-slate-300 group-hover:text-indigo-400 text-xs transition-colors"></i>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-slate-500">
+              <span class="flex items-center gap-1">
+                <i class="fas fa-users text-emerald-400"></i>
+                {{ c.students|length }} students
+              </span>
+              <span class="flex items-center gap-1">
+                <i class="fas fa-file-pdf text-indigo-400"></i>
+                {{ c.semester or 'No sem' }}
+              </span>
+              {% if c.teacher_id != current_user.id %}
+              <span class="ml-auto text-[10px] bg-amber-50 text-amber-600 border border-amber-100 font-bold px-1.5 py-0.5 rounded-full uppercase">Co-Teacher</span>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Classrooms with no semester assigned -->
+    {% if unassigned_classrooms %}
+    <div id="sem-unassigned">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-8 h-8 bg-slate-400 rounded-lg flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-folder text-white text-xs"></i>
+        </div>
+        <h2 class="font-black text-slate-600 text-base">No Semester Assigned</h2>
+        <div class="flex-1 h-px bg-slate-100"></div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {% for c in unassigned_classrooms %}
+        <a href="{{ url_for('teacher.view_classroom', classroom_id=c.id) }}"
+           class="card-lift block bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-5 transition-all group">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-slate-500 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 group-hover:bg-slate-600 transition-colors">
+              {{ c.name[0].upper() }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-bold text-slate-900 truncate">{{ c.name }}</p>
+              <p class="text-xs text-slate-400">{{ c.students|length }} students</p>
+            </div>
+            <i class="fas fa-arrow-right text-slate-300 group-hover:text-indigo-400 text-xs transition-colors"></i>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not classrooms %}
+    <div class="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-slate-100">
+      <i class="fas fa-chalkboard text-4xl text-slate-200 mb-3 block"></i>
+      <p class="font-semibold text-slate-300 mb-1">No classrooms yet</p>
+      <p class="text-xs text-slate-300 mb-4">Click "New Classroom" to get started.</p>
+      <button onclick="document.getElementById('modal-create').classList.remove('hidden')"
+        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-all">
+        <i class="fas fa-plus text-xs"></i> Create First Classroom
+      </button>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- RIGHT: Global Notices panel -->
+  <div class="space-y-5">
+
+    <!-- Post Global Notice -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center gap-2">
+        <i class="fas fa-globe text-pink-500 text-sm"></i>
+        <h3 class="font-bold text-slate-800 text-sm">Post Global Announcement</h3>
+      </div>
+      <div class="p-5">
+        <p class="text-xs text-slate-400 mb-3">Visible to <strong class="text-slate-600">all students</strong> regardless of classroom.</p>
+        <form method="POST" action="{{ url_for('teacher.post_global_notice') }}" class="space-y-2.5">
+          <input name="title" placeholder="Announcement title..." required
+            class="input-focus w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-800 placeholder-slate-400">
+          <textarea name="content" rows="3" placeholder="Write your announcement..." required
+            class="input-focus w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-800 placeholder-slate-400 resize-none"></textarea>
+          <button class="w-full flex items-center justify-center gap-1.5 bg-pink-500 hover:bg-pink-600 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all">
+            <i class="fas fa-paper-plane text-xs"></i> Send to All Students
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Global Notices list -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="fas fa-bullhorn text-pink-400 text-sm"></i>
+          <h3 class="font-bold text-slate-800 text-sm">My Global Notices</h3>
+        </div>
+        <span class="text-xs font-bold bg-pink-50 text-pink-600 px-2 py-0.5 rounded-full">{{ global_notices|length }}</span>
+      </div>
+      <div class="p-4 space-y-2 max-h-80 overflow-y-auto">
+        {% for n in global_notices %}
+        <div class="p-3 rounded-xl border border-slate-100 hover:border-pink-100 hover:bg-pink-50/30 transition-all">
+          <p class="text-sm font-semibold text-slate-800 mb-0.5">{{ n.title }}</p>
+          <p class="text-xs text-slate-500 leading-relaxed mb-1.5 line-clamp-2">{{ n.content }}</p>
+          <p class="text-[11px] text-slate-400">
+            <i class="far fa-clock mr-1"></i>{{ n.posted_date.strftime('%b %d, %Y') }}
+            <span class="ml-1.5 bg-pink-50 text-pink-500 border border-pink-100 font-bold px-1.5 py-0.5 rounded-full text-[9px] uppercase">Global</span>
+          </p>
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+          <i class="fas fa-bell-slash text-2xl text-slate-200 mb-2 block"></i>
+          <p class="text-xs text-slate-400">No global announcements yet</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+      <h3 class="font-bold text-slate-700 text-sm mb-3 flex items-center gap-2">
+        <i class="fas fa-bolt text-amber-400"></i> Quick Actions
+      </h3>
+      <div class="space-y-2">
+        <a href="{{ url_for('ai.chat') }}"
+          class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group">
+          <div class="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-indigo-100 transition-colors">
+            <i class="fas fa-robot text-indigo-500 text-xs"></i>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-slate-700">AI Doubt Solver</p>
+            <p class="text-xs text-slate-400">Ask anything with AI</p>
+          </div>
+          <i class="fas fa-arrow-right text-slate-300 group-hover:text-indigo-400 text-xs ml-auto transition-colors"></i>
+        </a>
+        <button onclick="document.getElementById('modal-create').classList.remove('hidden')"
+          class="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30 transition-all group">
+          <div class="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-100 transition-colors">
+            <i class="fas fa-plus text-emerald-500 text-xs"></i>
+          </div>
+          <div class="text-left">
+            <p class="text-sm font-semibold text-slate-700">New Classroom</p>
+            <p class="text-xs text-slate-400">Create a semester class</p>
+          </div>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /right col -->
+</div>
+
+
+<!-- ── CREATE CLASSROOM MODAL ── -->
+<div id="modal-create" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+       onclick="document.getElementById('modal-create').classList.add('hidden')"></div>
+  <!-- Card -->
+  <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6 fade-up">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-lg font-black text-slate-900">Create New Classroom</h2>
+      <button onclick="document.getElementById('modal-create').classList.add('hidden')"
+        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all">
+        <i class="fas fa-times text-sm"></i>
+      </button>
+    </div>
+
+    <form method="POST" action="{{ url_for('teacher.create_classroom') }}" class="space-y-3.5">
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Classroom Name *</label>
+        <input name="name" placeholder="e.g. IT-A, CS-61, MECH-Div-B" required
+          class="input-focus w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-800 placeholder-slate-400">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Semester</label>
+        <select name="semester"
+          class="input-focus w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-800">
+          <option value="">-- No Semester --</option>
+          {% for sem in semesters %}
+          <option value="{{ sem }}">{{ sem }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Description <span class="text-slate-400 font-normal">(optional)</span></label>
+        <input name="description" placeholder="e.g. 2nd Year Information Technology"
+          class="input-focus w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-800 placeholder-slate-400">
+      </div>
+
+      <button class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-3 rounded-xl text-sm transition-all mt-1">
+        <i class="fas fa-plus text-xs"></i> Create Classroom
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+// Close modal on Escape
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('modal-create').classList.add('hidden');
+});
+</script>
+{% endblock %}

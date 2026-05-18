@@ -1,0 +1,188 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Manage Students{% endblock %}
+{% block header_title %}Students Directory{% endblock %}
+
+{% block content %}
+<div class="admin-stats-grid" style="grid-template-columns: 1fr 2fr;">
+
+    <!-- ── Create Student Form ── -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Add New Student</h2>
+        </div>
+        <div style="padding:1.5rem;">
+            <p style="font-size:0.8rem;color:var(--admin-text-muted);margin:0 0 1rem;">
+                Students are auto-enrolled in all subjects of their semester.
+                Assign batch <strong>A / B / C</strong> evenly for lab sessions.
+            </p>
+            <form action="{{ url_for('admin.students') }}" method="POST">
+                <div class="admin-form-group">
+                    <label class="admin-label">Full Name (optional)</label>
+                    <input type="text" name="name" class="admin-input" placeholder="e.g. Rahul Sharma">
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Email *</label>
+                    <input type="email" name="email" class="admin-input" required placeholder="student@college.edu">
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Password *</label>
+                    <input type="password" name="password" class="admin-input" required placeholder="Initial password">
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Semester</label>
+                    <select name="semester" class="admin-input">
+                        <option value="">-- Assign Semester --</option>
+                        {% for sem in semesters %}
+                        <option value="{{ sem }}">{{ sem }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="admin-form-group mb-4">
+                    <label class="admin-label">Lab Batch</label>
+                    <select name="batch" class="admin-input">
+                        <option value="">-- Assign Batch --</option>
+                        {% for b in batches %}
+                        <option value="{{ b }}">Batch {{ b }}</option>
+                        {% endfor %}
+                    </select>
+                    <!-- Batch balance hints -->
+                    <div style="display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;">
+                        {% for sem in semesters %}
+                        {% set counts = batch_counts.get(sem, {}) %}
+                        {% if counts.values()|sum > 0 %}
+                        <div style="font-size:0.7rem;background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:6px;padding:3px 8px;color:var(--admin-text-muted);">
+                            <strong>{{ sem }}:</strong>
+                            {% for b in batches %}A{{ 'A' if b=='A' else 'B' if b=='B' else 'C' }}={{ counts.get(b,0) }}{% if not loop.last %} {% endif %}{% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary" style="width:100%;">
+                    Create Student
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ── Student List ── -->
+    <div class="admin-card">
+        <div class="admin-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+            <h2 class="admin-card-title">All Students</h2>
+            <span style="font-size:0.75rem;color:var(--admin-text-muted);">{{ students|length }} total</span>
+        </div>
+
+        {% if not students %}
+        <div style="padding:3rem;text-align:center;color:var(--admin-text-muted);">
+            No students registered yet.
+        </div>
+        {% else %}
+
+        <!-- Semester filter tabs -->
+        <div style="padding:1rem 1.5rem 0;display:flex;gap:0.4rem;flex-wrap:wrap;border-bottom:1px solid var(--admin-border);">
+            <button onclick="filterSem('all')" id="sem-btn-all"
+                class="sem-filter-btn"
+                style="padding:0.3rem 0.75rem;font-size:0.75rem;font-weight:600;border-radius:8px;border:1px solid #6366f1;background:#6366f1;color:#fff;cursor:pointer;">
+                All
+            </button>
+            {% for sem in semesters %}
+            {% set sem_students = students | selectattr('semester', 'equalto', sem) | list %}
+            {% if sem_students %}
+            <button onclick="filterSem('{{ sem|replace(' ','-') }}')" id="sem-btn-{{ sem|replace(' ','-') }}"
+                class="sem-filter-btn"
+                style="padding:0.3rem 0.75rem;font-size:0.75rem;font-weight:600;border-radius:8px;border:1px solid var(--admin-border);background:transparent;color:var(--admin-text-muted);cursor:pointer;">
+                {{ sem }} ({{ sem_students|length }})
+            </button>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Password</th>
+                        <th>Semester</th>
+                        <th>Batch</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr class="student-row" data-sem="{{ (student.semester or 'none')|replace(' ','-') }}">
+                        <td style="font-weight:500;">
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <div style="width:28px;height:28px;background:#ede9fe;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;color:#6d28d9;flex-shrink:0;">
+                                    {{ student.name[0].upper() if student.name else '?' }}
+                                </div>
+                                {{ student.name or '—' }}
+                            </div>
+                        </td>
+                        <td style="color:var(--admin-text-muted);font-size:0.85rem;">{{ student.email }}</td>
+                        <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;font-weight:600;color:#0f172a;">{{ student.plain_password or 'password123' }}</code></td>
+                        <td>
+                            {% if student.semester %}
+                            <span style="background:#ede9fe;color:#6d28d9;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:999px;">{{ student.semester }}</span>
+                            {% else %}
+                            <span style="color:#94a3b8;font-size:0.75rem;">— unassigned —</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if student.batch %}
+                            <span style="background:{% if student.batch=='A' %}#ecfdf5;color:#065f46{% elif student.batch=='B' %}#eff6ff;color:#1e40af{% else %}#fff7ed;color:#9a3412{% endif %};font-size:0.7rem;font-weight:800;padding:2px 10px;border-radius:999px;border:1px solid currentColor;">
+                                Batch {{ student.batch }}
+                            </span>
+                            {% else %}
+                            <span style="color:#94a3b8;font-size:0.75rem;">— unassigned —</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Quick edit sem/batch -->
+                            <form action="{{ url_for('admin.edit_student', id=student.id) }}" method="POST"
+                                  style="display:inline-flex;gap:0.3rem;align-items:center;">
+                                <select name="semester" style="font-size:0.72rem;padding:2px 4px;border:1px solid var(--admin-border);border-radius:5px;background:var(--admin-bg);color:var(--admin-text);">
+                                    <option value="">No Sem</option>
+                                    {% for sem in semesters %}
+                                    <option value="{{ sem }}" {% if student.semester==sem %}selected{% endif %}>{{ sem }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select name="batch" style="font-size:0.72rem;padding:2px 4px;border:1px solid var(--admin-border);border-radius:5px;background:var(--admin-bg);color:var(--admin-text);">
+                                    <option value="">No Batch</option>
+                                    {% for b in batches %}
+                                    <option value="{{ b }}" {% if student.batch==b %}selected{% endif %}>Batch {{ b }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="admin-btn admin-btn-primary" style="padding:0.2rem 0.5rem;font-size:0.7rem;">Save</button>
+                            </form>
+                            <form action="{{ url_for('admin.delete_student', id=student.id) }}" method="POST"
+                                  style="display:inline;" onsubmit="return confirm('Delete {{ student.name }}?');">
+                                <button type="submit" class="admin-btn admin-btn-danger" style="padding:0.2rem 0.5rem;font-size:0.7rem;">Del</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function filterSem(sem) {
+    document.querySelectorAll('.student-row').forEach(row => {
+        row.style.display = (sem === 'all' || row.dataset.sem === sem) ? '' : 'none';
+    });
+    document.querySelectorAll('.sem-filter-btn').forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--admin-text-muted)';
+        btn.style.borderColor = 'var(--admin-border)';
+    });
+    const active = document.getElementById('sem-btn-' + sem);
+    if (active) { active.style.background = '#6366f1'; active.style.color = '#fff'; active.style.borderColor = '#6366f1'; }
+}
+</script>
+{% endblock %}

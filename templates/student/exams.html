@@ -1,0 +1,52 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}My Exam Results{% endblock %}
+{% block header_title %}Exam Results{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">Academic Record</h1>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h2 class="admin-card-title">Published Exam Results</h2>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Exam Title</th>
+                    <th>Subject</th>
+                    <th>Date</th>
+                    <th>Score</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                <tr>
+                    <td style="font-weight: bold; color: var(--admin-text);">{{ result.exam.title }}</td>
+                    <td style="font-weight: 500;">{{ result.exam.subject.name }} ({{ result.exam.subject.code }})</td>
+                    <td>{{ result.exam.date.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% set percentage = (result.marks_obtained / result.exam.total_marks) * 100 %}
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-lg {{ 'text-emerald-600' if percentage >= 80 else 'text-amber-600' if percentage >= 50 else 'text-red-600' }}">
+                                {{ result.marks_obtained }}
+                            </span>
+                            <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">/ {{ result.exam.total_marks }}</span>
+                        </div>
+                    </td>
+                    <td class="text-slate-600 italic">{{ result.remarks or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">No exam results published yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

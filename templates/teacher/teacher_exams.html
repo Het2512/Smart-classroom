@@ -1,0 +1,58 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Exams & Grading{% endblock %}
+{% block header_title %}Exams & Grading{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">My Exams to Grade</h1>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h2 class="admin-card-title">Assigned Exams</h2>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Semester</th>
+                    <th>Subject</th>
+                    <th>Date</th>
+                    <th>Total Marks</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exam in exams %}
+                <tr>
+                    <td style="font-weight: bold; color: var(--admin-text);">{{ exam.title }}</td>
+                    <td style="font-weight: 500;">{{ exam.semester }}</td>
+                    <td>{{ exam.subject.name if exam.subject else '-' }}</td>
+                    <td>{{ exam.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ exam.total_marks }}</td>
+                    <td>
+                        {% if exam.is_published %}
+                            <span style="background-color: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Published</span>
+                        {% else %}
+                            <span style="background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Draft (Gradeable)</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('teacher.grade_exam', exam_id=exam.id) }}" class="admin-btn admin-btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
+                            <i class="fas fa-edit mr-1"></i> Grade Exam
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">No exams assigned to your subjects.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

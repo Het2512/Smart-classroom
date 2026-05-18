@@ -1,0 +1,84 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Manage Classrooms{% endblock %}
+{% block header_title %}Classrooms Directory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-4">
+    <h1 class="admin-page-title" style="margin-bottom: 0;">Active Classrooms</h1>
+</div>
+
+<div class="admin-stats-grid" style="grid-template-columns: 1fr 2fr;">
+    <!-- Add Classroom Form -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Create New Classroom</h2>
+        </div>
+        <div style="padding: 1.5rem;">
+            <form action="{{ url_for('admin.classrooms') }}" method="POST">
+                <div class="admin-form-group">
+                    <label class="admin-label">Classroom Name</label>
+                    <input type="text" name="name" class="admin-input" placeholder="e.g. Sem 3 - IT" required>
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Semester</label>
+                    <input type="text" name="semester" class="admin-input" placeholder="e.g. Sem 3">
+                </div>
+                <div class="admin-form-group">
+                    <label class="admin-label">Description (Optional)</label>
+                    <input type="text" name="description" class="admin-input">
+                </div>
+                <div class="admin-form-group mb-4">
+                    <label class="admin-label">Assign Main Teacher</label>
+                    <select name="teacher_id" class="admin-input text-sm">
+                        <option value="">-- No Teacher Assigned --</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}">{{ teacher.name }} ({{ teacher.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="admin-btn admin-btn-primary" style="width: 100%;">Create Classroom</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Classrooms List -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Classrooms List</h2>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Semester</th>
+                        <th>Main Teacher</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for classroom in classrooms %}
+                    <tr>
+                        <td>#{{ classroom.id }}</td>
+                        <td style="font-weight: 500;">{{ classroom.name }}</td>
+                        <td>{{ classroom.semester or '-' }}</td>
+                        <td>{{ classroom.teacher.name if classroom.teacher else '-' }}</td>
+                        <td>
+                            <form action="{{ url_for('admin.delete_classroom', id=classroom.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this classroom?');">
+                                <button type="submit" class="admin-btn admin-btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--admin-text-muted); padding: 2rem;">No classrooms found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

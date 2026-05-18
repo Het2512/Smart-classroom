@@ -1,0 +1,833 @@
+{% extends 'dashboard_base.html' %}
+{% block title %}{{ classroom.name }} — {{ classroom.semester or 'No Semester' }}{% endblock %}
+{% block header_title %}Classroom Details{% endblock %}
+{% block content %}
+<!-- Breadcrumb & Header -->
+<div class="mb-7">
+  <div class="flex items-center gap-2 text-xs text-slate-400 mb-3">
+    <a href="{{ url_for('teacher.teacher_dashboard') }}"
+       class="hover:text-indigo-600 transition-colors flex items-center gap-1">
+      <i class="fas fa-th-large text-[10px]"></i> My Classrooms
+    </a>
+    <i class="fas fa-chevron-right text-[9px] text-slate-300"></i>
+    {% if classroom.semester %}
+    <a href="{{ url_for('teacher.teacher_dashboard') }}#sem-{{ classroom.semester|replace(' ', '-') }}"
+       class="hover:text-indigo-600 transition-colors">{{ classroom.semester }}</a>
+    <i class="fas fa-chevron-right text-[9px] text-slate-300"></i>
+    {% endif %}
+    <span class="text-slate-600 font-semibold">{{ classroom.name }}</span>
+  </div>
+
+  <div class="flex items-start justify-between flex-wrap gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-lg font-black shadow-sm shadow-indigo-200 flex-shrink-0">
+        {{ classroom.name[0].upper() }}
+      </div>
+      <div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 class="text-2xl font-black text-slate-900">{{ classroom.name }}</h1>
+          {% if classroom.semester %}
+          <span class="text-xs font-bold bg-violet-100 text-violet-700 px-2.5 py-0.5 rounded-full border border-violet-200">
+            <i class="fas fa-layer-group text-[9px] mr-1"></i>{{ classroom.semester }}
+          </span>
+          {% endif %}
+          {% if is_owner %}
+          <span class="text-xs font-bold bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full">Owner</span>
+          {% else %}
+          <span class="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Co-Teacher</span>
+          {% endif %}
+        </div>
+        {% if classroom.description %}
+        <p class="text-slate-500 text-sm mt-0.5">{{ classroom.description }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if is_owner %}
+    <form method="POST" action="{{ url_for('teacher.delete_classroom', classroom_id=classroom.id) }}"
+          onsubmit="return confirm('Delete classroom {{ classroom.name }}? This cannot be undone.')">
+      <button class="flex items-center gap-1.5 text-xs font-semibold text-red-500 hover:text-white hover:bg-red-500 border border-red-200 hover:border-red-500 px-3 py-2 rounded-xl transition-all">
+        <i class="fas fa-trash text-[10px]"></i> Delete Classroom
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="grid grid-cols-3 gap-4 mb-7">
+  <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+    <div class="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-users text-emerald-500"></i>
+    </div>
+    <div>
+      <div class="text-2xl font-black text-slate-900">{{ students|length }}</div>
+      <div class="text-xs text-slate-400 font-medium">Students</div>
+    </div>
+  </div>
+  <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+    <div class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-file-pdf text-indigo-500"></i>
+    </div>
+    <div>
+      <div class="text-2xl font-black text-slate-900">{{ notes|length }}</div>
+      <div class="text-xs text-slate-400 font-medium">Notes</div>
+    </div>
+  </div>
+  <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+    <div class="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
+      <i class="fas fa-chalkboard-teacher text-violet-500"></i>
+    </div>
+    <div>
+      <div class="text-2xl font-black text-slate-900">{{ co_teachers|length }}</div>
+      <div class="text-xs text-slate-400 font-medium">Teachers</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab Panel -->
+<div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+
+  <!-- Tab buttons -->
+  <div class="p-2 bg-slate-50 border-b border-slate-100">
+    <div class="flex gap-2 overflow-x-auto scrollbar-hide">
+      <button id="tab-students" onclick="showTab('students')"
+        class="tab-btn tab-active flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl transition-all whitespace-nowrap">
+        <i class="fas fa-users text-xs"></i> Students
+      </button>
+      <button id="tab-notes" onclick="showTab('notes')"
+        class="tab-btn tab-inactive flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl transition-all whitespace-nowrap">
+        <i class="fas fa-cloud-upload-alt text-xs"></i> Notes
+      </button>
+      <button id="tab-notices" onclick="showTab('notices')"
+        class="tab-btn tab-inactive flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl transition-all whitespace-nowrap">
+        <i class="fas fa-bullhorn text-xs"></i> Notices
+      </button>
+      <button id="tab-attendance" onclick="showTab('attendance')"
+        class="tab-btn tab-inactive flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl transition-all whitespace-nowrap">
+        <i class="fas fa-check-circle text-xs"></i> Attendance
+      </button>
+      <button id="tab-teachers" onclick="showTab('teachers')"
+        class="tab-btn tab-inactive flex items-center gap-2 px-4 py-2.5 text-sm rounded-xl transition-all whitespace-nowrap">
+        <i class="fas fa-chalkboard-teacher text-xs"></i> Teachers
+      </button>
+    </div>
+  </div>
+
+  <div class="p-6">
+
+    <!-- ── STUDENTS ── -->
+    <div id="pane-students" class="tab-pane">
+
+      <!-- Info banner -->
+      <div class="flex items-start gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 mb-5 text-xs text-indigo-700">
+        <i class="fas fa-info-circle mt-0.5 flex-shrink-0 text-sm"></i>
+        <div>
+          <strong>Auto-enrolled students</strong> — All students assigned to
+          <span class="font-bold">{{ classroom.semester or 'this classroom' }}</span> are automatically members.
+          {% if not classroom.semester %}
+          <span class="text-amber-600 font-semibold">Set a semester for this classroom to see enrolled students.</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if not classroom.semester %}
+      <div class="text-center py-12 rounded-xl border-2 border-dashed border-amber-100 bg-amber-50/30">
+        <i class="fas fa-exclamation-triangle text-3xl text-amber-300 mb-2 block"></i>
+        <p class="text-sm font-semibold text-amber-600">No semester assigned to this classroom</p>
+        <p class="text-xs text-slate-400 mt-1">Ask the admin to set a semester, or edit the classroom.</p>
+      </div>
+
+      {% elif not students %}
+      <div class="text-center py-12 rounded-xl border-2 border-dashed border-slate-100">
+        <i class="fas fa-users text-3xl text-slate-200 mb-2 block"></i>
+        <p class="text-sm text-slate-400">No students in {{ classroom.semester }} yet. Ask admin to add students.</p>
+      </div>
+
+      {% else %}
+      <!-- Batch summary pills -->
+      <div class="flex items-center gap-3 mb-4 flex-wrap">
+        <span class="text-xs font-semibold text-slate-500">Batches:</span>
+        {% for b in batches %}
+        {% set bc = batch_students[b]|length %}
+        <span class="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border
+          {% if b=='A' %}bg-emerald-50 text-emerald-700 border-emerald-200
+          {% elif b=='B' %}bg-blue-50 text-blue-700 border-blue-200
+          {% else %}bg-orange-50 text-orange-700 border-orange-200{% endif %}">
+          <i class="fas fa-flask text-[9px]"></i> Batch {{ b }}: {{ bc }} students
+        </span>
+        {% endfor %}
+        <span class="text-xs text-slate-400 ml-auto">{{ students|length }} total</span>
+      </div>
+
+      <!-- Student list grouped by batch -->
+      {% for b in batches %}
+      {% set blist = batch_students[b] %}
+      {% if blist %}
+      <div class="mb-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider
+            {% if b=='A' %}bg-emerald-100 text-emerald-700{% elif b=='B' %}bg-blue-100 text-blue-700{% else %}bg-orange-100 text-orange-700{% endif %}">
+            🔬 Lab Batch {{ b }}
+          </span>
+          <span class="text-[10px] text-slate-400">{{ blist|length }} students</span>
+        </div>
+        {% for u in blist %}
+        <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/20 mb-1.5 transition-all">
+          <div class="w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs flex-shrink-0
+            {% if b=='A' %}bg-emerald-100 text-emerald-700{% elif b=='B' %}bg-blue-100 text-blue-700{% else %}bg-orange-100 text-orange-700{% endif %}">
+            {{ u.name[0].upper() if u.name else '?' }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-slate-800">{{ u.name }}</p>
+            <p class="text-xs text-slate-400">{{ u.email }}</p>
+          </div>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border
+            {% if b=='A' %}bg-emerald-50 text-emerald-600 border-emerald-200
+            {% elif b=='B' %}bg-blue-50 text-blue-600 border-blue-200
+            {% else %}bg-orange-50 text-orange-600 border-orange-200{% endif %}">
+            Batch {{ b }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endfor %}
+
+      <!-- Students without batch -->
+      {% set no_batch = students | selectattr('batch', 'none') | list %}
+      {% if no_batch %}
+      <div class="mb-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-[10px] font-black px-2.5 py-1 rounded-lg uppercase bg-slate-100 text-slate-500">Unassigned Batch</span>
+          <span class="text-[10px] text-slate-400">{{ no_batch|length }} students</span>
+        </div>
+        {% for u in no_batch %}
+        <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 border-dashed mb-1.5">
+          <div class="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center font-black text-slate-500 text-xs flex-shrink-0">
+            {{ u.name[0].upper() if u.name else '?' }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-slate-700">{{ u.name }}</p>
+            <p class="text-xs text-slate-400">{{ u.email }}</p>
+          </div>
+          <span class="text-[10px] text-amber-600 font-bold bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">No batch</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+
+
+    <!-- ── NOTES ── -->
+    <div id="pane-notes" class="tab-pane hidden">
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-5">
+        <p class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          <i class="fas fa-cloud-upload-alt text-indigo-500"></i> Upload Note to {{ classroom.name }}
+        </p>
+        <form method="POST" action="{{ url_for('teacher.upload_note_to_classroom', classroom_id=classroom.id) }}" enctype="multipart/form-data">
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <input name="title" placeholder="Note title..." required
+              class="input-focus flex-1 px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400">
+            <input type="file" name="file" accept=".pdf" required
+              class="input-focus flex-1 px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white file:text-xs file:font-semibold">
+            <button class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all whitespace-nowrap">
+              <i class="fas fa-upload text-xs"></i> Upload
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm font-semibold text-slate-700">Uploaded Materials</p>
+        <span class="text-xs font-bold bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">{{ notes|length }}</span>
+      </div>
+
+      {% for n in notes %}
+      <div class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-indigo-100 hover:bg-indigo-50/40 mb-2 transition-all">
+        <div class="w-9 h-9 bg-red-50 border border-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+          <i class="fas fa-file-pdf text-red-400 text-sm"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-slate-800 truncate">{{ n.title }}</p>
+          <p class="text-xs text-slate-400">{{ n.upload_date.strftime('%b %d, %Y') }}</p>
+        </div>
+        <a href="{{ url_for('main.download', filename=n.filename) }}"
+          class="flex items-center gap-1.5 text-xs font-semibold bg-white border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 text-slate-600 px-3 py-1.5 rounded-lg transition-all">
+          <i class="fas fa-download text-[10px]"></i> Download
+        </a>
+        <form method="POST" action="{{ url_for('teacher.delete_note', classroom_id=classroom.id, note_id=n.id) }}"
+              onsubmit="return confirm('Delete note: {{ n.title }}?')">
+          <button class="text-xs font-semibold text-red-400 hover:text-white hover:bg-red-500 border border-red-100 hover:border-red-500 px-2.5 py-1.5 rounded-lg transition-all">
+            <i class="fas fa-trash text-[10px] mr-1"></i>Delete
+          </button>
+        </form>
+        <!-- No delete button — add-only policy -->
+      </div>
+      {% else %}
+      <div class="text-center py-12 rounded-xl border-2 border-dashed border-slate-100">
+        <i class="fas fa-folder-open text-3xl text-slate-200 mb-2 block"></i>
+        <p class="text-sm text-slate-400">No notes uploaded yet</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- ── NOTICES ── -->
+    <div id="pane-notices" class="tab-pane hidden">
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 mb-5">
+        <p class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          <i class="fas fa-plus text-pink-500"></i> Post Notice to {{ classroom.name }}
+        </p>
+        <form method="POST" action="{{ url_for('teacher.post_notice_to_classroom', classroom_id=classroom.id) }}" class="space-y-2.5">
+          <input name="title" placeholder="Notice title..." required
+            class="input-focus w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400">
+          <textarea name="content" rows="3" placeholder="Notice content..." required
+            class="input-focus w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 resize-none"></textarea>
+          <button class="flex items-center gap-1.5 bg-pink-500 hover:bg-pink-600 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-all">
+            <i class="fas fa-paper-plane text-xs"></i> Post Notice
+          </button>
+        </form>
+      </div>
+
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm font-semibold text-slate-700">Classroom Notices</p>
+        <span class="text-xs font-bold bg-pink-50 text-pink-600 px-2 py-0.5 rounded-full">{{ notices|length }}</span>
+      </div>
+
+      {% for n in notices %}
+      <div class="p-4 rounded-xl border border-slate-100 hover:border-pink-100 hover:bg-pink-50/30 mb-2.5 transition-all">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 bg-pink-50 border border-pink-100 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+            <i class="fas fa-bullhorn text-pink-400 text-xs"></i>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-slate-800 mb-0.5">{{ n.title }}</p>
+            <p class="text-sm text-slate-500 leading-relaxed mb-1.5">{{ n.content }}</p>
+            <p class="text-xs text-slate-400"><i class="far fa-clock mr-1"></i>{{ n.posted_date.strftime('%b %d, %Y at %I:%M %p') }}</p>
+          </div>
+          <form method="POST" action="{{ url_for('teacher.delete_notice', classroom_id=classroom.id, notice_id=n.id) }}"
+                onsubmit="return confirm('Delete this notice?')">
+            <button class="flex-shrink-0 text-xs font-semibold text-red-400 hover:text-white hover:bg-red-500 border border-red-100 hover:border-red-500 px-2.5 py-1.5 rounded-lg transition-all">
+              <i class="fas fa-trash text-[10px]"></i>
+            </button>
+          </form>
+          <!-- No delete button — add-only policy -->
+        </div>
+      </div>
+      {% else %}
+      <div class="text-center py-12 rounded-xl border-2 border-dashed border-slate-100">
+        <i class="fas fa-bell-slash text-3xl text-slate-200 mb-2 block"></i>
+        <p class="text-sm text-slate-400">No notices posted yet</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- ── ATTENDANCE ── -->
+    <div id="pane-attendance" class="tab-pane hidden">
+
+      <!-- ══ LIVE SESSION PANEL ══ -->
+      {% if active_slots %}
+        {% for slot in active_slots %}
+        <div class="relative overflow-hidden rounded-2xl border-2 border-emerald-400 bg-gradient-to-br from-emerald-50 to-teal-50 p-5 mb-5 shadow-sm shadow-emerald-100">
+          <!-- Pulsing dot -->
+          <div class="absolute top-4 right-4 flex items-center gap-1.5">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-bold text-emerald-700">LIVE</span>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0
+              {% if slot.session_type == 'lab' %}bg-teal-100 text-teal-600{% else %}bg-emerald-100 text-emerald-600{% endif %}">
+              <i class="fas {% if slot.session_type == 'lab' %}fa-flask{% else %}fa-chalkboard{% endif %} text-lg"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-lg font-black text-slate-900">{{ slot.subject.name }}
+                <span class="text-sm font-semibold text-slate-500">({{ slot.subject.code }})</span>
+              </p>
+              <div class="flex flex-wrap items-center gap-2 mt-1">
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full
+                  {% if slot.session_type == 'lab' %}bg-teal-100 text-teal-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                  {{ slot.session_type | capitalize }}
+                </span>
+                {% if slot.batch %}
+                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                  Batch {{ slot.batch }}
+                </span>
+                {% endif %}
+                <span class="text-xs text-slate-500">
+                  <i class="far fa-clock mr-1"></i>{{ slot.start_time.strftime('%H:%M') }} – {{ slot.end_time.strftime('%H:%M') }}
+                </span>
+                <span id="countdown-{{ slot.id }}" class="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Student list for this slot -->
+          <form method="POST" action="{{ url_for('teacher.mark_attendance_for_classroom', classroom_id=classroom.id) }}"
+                class="mt-5" id="live-form-{{ slot.id }}">
+            <input type="hidden" name="timetable_id" value="{{ slot.id }}">
+
+            {% if slot.session_type == 'lab' and slot.batch %}
+              {% set slot_students = batch_students.get(slot.batch, []) %}
+            {% else %}
+              {% set slot_students = students %}
+            {% endif %}
+
+            <div class="flex gap-2 mb-3">
+              <button type="button" onclick="markAllInForm('live-form-{{ slot.id }}', true)"
+                class="flex items-center gap-1.5 text-xs font-semibold bg-emerald-100 hover:bg-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg transition-all">
+                <i class="fas fa-check-double text-[10px]"></i> All Present
+              </button>
+              <button type="button" onclick="markAllInForm('live-form-{{ slot.id }}', false)"
+                class="flex items-center gap-1.5 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg transition-all">
+                <i class="fas fa-times text-[10px]"></i> All Absent
+              </button>
+              <span class="text-xs text-slate-400 ml-auto self-center">{{ slot_students|length }} student(s)</span>
+            </div>
+
+            <div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+              {% for u in slot_students %}
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 cursor-pointer transition-all">
+                <input type="checkbox" name="present" value="{{ u.id }}" checked
+                  class="w-4 h-4 accent-emerald-600 rounded flex-shrink-0">
+                <div class="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center font-black text-emerald-600 text-xs flex-shrink-0">
+                  {{ u.name[0].upper() if u.name else '?' }}
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-slate-800">{{ u.name }}</p>
+                  <p class="text-xs text-slate-400">{{ u.email }}</p>
+                </div>
+                {% if u.batch %}<span class="text-[10px] font-bold px-2 py-0.5 rounded-full
+                  {% if u.batch=='A' %}bg-emerald-50 text-emerald-600 border border-emerald-200
+                  {% elif u.batch=='B' %}bg-blue-50 text-blue-600 border border-blue-200
+                  {% else %}bg-orange-50 text-orange-600 border border-orange-200{% endif %}">{{ u.batch }}</span>{% endif %}
+              </label>
+              {% else %}
+              <div class="text-center py-8 rounded-xl border-2 border-dashed border-slate-100">
+                <p class="text-sm text-slate-400">No students for this session yet.</p>
+              </div>
+              {% endfor %}
+            </div>
+
+            {% if slot_students %}
+            <button type="submit"
+              onclick="return confirm('Save attendance for {{ slot.subject.name }} — {{ slot.session_type }}?')"
+              class="w-full mt-4 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-sm shadow-emerald-200">
+              <i class="fas fa-save"></i> Save Attendance Now
+            </button>
+            {% endif %}
+          </form>
+        </div>
+        {% endfor %}
+
+      {% else %}
+        <!-- No active session -->
+        <div class="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-8 text-center mb-5">
+          <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-lock text-2xl text-slate-300"></i>
+          </div>
+          <p class="text-base font-bold text-slate-500">No Active Session Right Now</p>
+          <p class="text-xs text-slate-400 mt-1">Attendance can only be marked during a scheduled timetable slot.</p>
+          {% if next_slot %}
+          <div class="mt-4 inline-flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-600">
+            <i class="fas fa-clock text-indigo-400"></i>
+            Next: <strong>{{ next_slot.subject.name }}</strong> ({{ next_slot.session_type | capitalize }}{% if next_slot.batch %} — Batch {{ next_slot.batch }}{% endif %})
+            at <strong>{{ next_slot.start_time.strftime('%H:%M') }}</strong>
+          </div>
+          {% else %}
+          <p class="text-xs text-slate-400 mt-3">No more sessions scheduled for today.</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <!-- ══ OVERRIDE (Advanced) ══ -->
+      <details class="mb-5">
+        <summary class="cursor-pointer text-xs font-semibold text-slate-400 hover:text-slate-600 flex items-center gap-2 py-2 select-none">
+          <i class="fas fa-sliders-h text-[10px]"></i> Advanced Override (mark outside timetable)
+        </summary>
+        <div class="mt-3 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
+          {% if not classroom_subjects %}
+          <p class="text-xs text-amber-600 font-semibold">No subjects assigned to you for this semester.</p>
+          {% else %}
+          <!-- Lecture override -->
+          <div>
+            <p class="text-xs font-bold text-slate-600 mb-2"><i class="fas fa-chalkboard mr-1 text-indigo-400"></i>Lecture</p>
+            <form method="POST" action="{{ url_for('teacher.mark_attendance_for_classroom', classroom_id=classroom.id) }}" class="space-y-3" id="override-lec-form">
+              <input type="hidden" name="att_type" value="lecture">
+              <div class="grid grid-cols-2 gap-2">
+                <select name="subject_id" required class="px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700 focus:ring-2 focus:ring-indigo-300 outline-none">
+                  <option value="">-- Subject --</option>
+                  {% for subj in classroom_subjects %}
+                  <option value="{{ subj.id }}">{{ subj.name }} ({{ subj.code }})</option>
+                  {% endfor %}
+                </select>
+                <input type="date" name="att_date" value="{{ today }}" max="{{ today }}" required class="px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700">
+              </div>
+              <div class="space-y-1 max-h-48 overflow-y-auto">
+                {% for u in students %}
+                <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-white cursor-pointer">
+                  <input type="checkbox" name="present" value="{{ u.id }}" class="w-3.5 h-3.5 accent-indigo-600">
+                  <span class="text-xs text-slate-700 font-medium">{{ u.name }}</span>
+                  <span class="text-[10px] text-slate-400">{{ u.email }}</span>
+                </label>
+                {% endfor %}
+              </div>
+              <button type="submit" onclick="return confirm('Save override lecture attendance?')"
+                class="text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all">
+                Save Lecture Attendance
+              </button>
+            </form>
+          </div>
+          <!-- Lab override -->
+          <div>
+            <p class="text-xs font-bold text-slate-600 mb-2"><i class="fas fa-flask mr-1 text-emerald-500"></i>Lab (Batch-wise)</p>
+            <form method="POST" action="{{ url_for('teacher.mark_attendance_for_classroom', classroom_id=classroom.id) }}" class="space-y-3">
+              <input type="hidden" name="att_type" value="lab">
+              <div class="grid grid-cols-3 gap-2">
+                <select name="subject_id" required class="px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700">
+                  <option value="">-- Subject --</option>
+                  {% for subj in classroom_subjects %}
+                  <option value="{{ subj.id }}">{{ subj.name }}</option>
+                  {% endfor %}
+                </select>
+                <select name="batch" required onchange="filterLabBatch(this.value)" class="px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700">
+                  <option value="">-- Batch --</option>
+                  {% for b in batches %}
+                  <option value="{{ b }}">Batch {{ b }} ({{ batch_students[b]|length }})</option>
+                  {% endfor %}
+                </select>
+                <input type="date" name="att_date" value="{{ today }}" max="{{ today }}" required class="px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white text-slate-700">
+              </div>
+              {% for b in batches %}
+              <div id="lab-students-{{ b }}" class="lab-batch-pane space-y-1 max-h-48 overflow-y-auto" style="display:none;">
+                {% for u in batch_students[b] %}
+                <label class="flex items-center gap-2 p-2 rounded-lg hover:bg-white cursor-pointer">
+                  <input type="checkbox" name="present" value="{{ u.id }}" class="w-3.5 h-3.5 accent-emerald-600">
+                  <span class="text-xs text-slate-700 font-medium">{{ u.name }}</span>
+                </label>
+                {% endfor %}
+              </div>
+              {% endfor %}
+              <div id="lab-no-batch" class="text-xs text-slate-400 py-2">Select a batch above to see students.</div>
+              <button id="lab-save-btn" type="submit" onclick="return confirm('Save override lab attendance?')"
+                class="hidden text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-all">
+                Save Lab Attendance
+              </button>
+            </form>
+          </div>
+          {% endif %}
+        </div>
+      </details>
+
+      <!-- Sub-tabs: History & Summary -->
+      <div class="flex gap-2 mb-4 border-b border-slate-100 pb-3">
+        <button id="att-tab-summary" onclick="showAttTab('summary')"
+          class="att-tab att-tab-inactive flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all">
+          <i class="fas fa-chart-pie text-xs"></i> Summary
+        </button>
+        <button id="att-tab-history" onclick="showAttTab('history')"
+          class="att-tab att-tab-inactive flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all">
+          <i class="fas fa-history text-xs"></i> History
+          {% if attendance_records %}<span class="bg-indigo-100 text-indigo-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{{ attendance_records|length }}</span>{% endif %}
+        </button>
+      </div>
+
+      <!-- History -->
+      <div id="att-pane-history" class="att-pane hidden">
+        {% if not attendance_records %}
+        <div class="text-center py-12 rounded-xl border-2 border-dashed border-slate-100">
+          <i class="fas fa-clipboard-list text-3xl text-slate-200 mb-2 block"></i>
+          <p class="text-sm text-slate-400">No attendance recorded yet</p>
+        </div>
+        {% else %}
+        <div class="flex flex-wrap items-center gap-2 mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+          <span class="text-xs font-semibold text-slate-500">Filter:</span>
+          <button onclick="filterAtt('all')" class="att-filter-btn att-filter-active text-xs px-3 py-1.5 rounded-lg border font-semibold transition-all">All</button>
+          <button onclick="filterAtt('lecture')" class="att-filter-btn text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-indigo-600 font-semibold transition-all">Lecture</button>
+          <button onclick="filterAtt('lab')" class="att-filter-btn text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-emerald-600 font-semibold transition-all">Lab</button>
+          <button onclick="filterAtt('present')" class="att-filter-btn text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-emerald-600 font-semibold transition-all">Present</button>
+          <button onclick="filterAtt('absent')" class="att-filter-btn text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-red-500 font-semibold transition-all">Absent</button>
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-slate-100">
+          <table class="w-full text-sm">
+            <thead><tr class="bg-slate-50 border-b border-slate-100">
+              <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">Student</th>
+              <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">Date</th>
+              <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">Type</th>
+              <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">Subject</th>
+              <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">Batch</th>
+              <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3">Status</th>
+            </tr></thead>
+            <tbody>
+              {% for rec in attendance_records %}
+              <tr class="att-row border-b border-slate-50 hover:bg-slate-50/60 transition-colors"
+                  data-type="{{ rec.attendance_type }}" data-status="{{ rec.status | lower }}">
+                <td class="px-4 py-3">
+                  {% set u = student_user_map.get(rec.student_id) %}
+                  {% if u %}
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center text-xs font-black text-indigo-600">{{ u.name[0].upper() }}</div>
+                    <div><p class="text-xs font-semibold text-slate-800">{{ u.name }}</p><p class="text-[10px] text-slate-400">{{ u.email }}</p></div>
+                  </div>
+                  {% else %}<span class="text-xs text-slate-400 font-mono">#{{ rec.student_id }}</span>{% endif %}
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-600 font-medium whitespace-nowrap">{{ rec.date.strftime('%d %b %Y') if rec.date else '-' }}</td>
+                <td class="px-4 py-3">
+                  {% if rec.attendance_type == 'lecture' %}
+                  <span class="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold px-2 py-0.5 rounded-full uppercase">Lecture</span>
+                  {% else %}
+                  <span class="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-100 font-bold px-2 py-0.5 rounded-full uppercase">Lab</span>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-600">{% if rec.subject %}<span class="font-semibold">{{ rec.subject.name }}</span> <span class="text-slate-400">({{ rec.subject.code }})</span>{% else %}<span class="text-slate-300">—</span>{% endif %}</td>
+                <td class="px-4 py-3">
+                  {% if rec.batch %}<span class="text-[10px] font-bold px-2 py-0.5 rounded-full border
+                    {% if rec.batch=='A' %}bg-emerald-50 text-emerald-600 border-emerald-200
+                    {% elif rec.batch=='B' %}bg-blue-50 text-blue-600 border-blue-200
+                    {% else %}bg-orange-50 text-orange-600 border-orange-200{% endif %}">{{ rec.batch }}</span>
+                  {% else %}<span class="text-slate-300">—</span>{% endif %}
+                </td>
+                <td class="px-4 py-3">
+                  {% if rec.status == 'Present' %}
+                  <span class="text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-0.5 rounded-full">✓ Present</span>
+                  {% else %}
+                  <span class="text-xs font-bold bg-red-50 text-red-500 border border-red-100 px-2 py-0.5 rounded-full">✗ Absent</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs text-slate-400 mt-3 text-right">{{ attendance_records|length }} records total</p>
+        {% endif %}
+      </div>
+
+      <!-- Summary -->
+      <div id="att-pane-summary" class="att-pane hidden">
+        <p class="text-xs text-slate-400 mb-4">Subject-wise % per student. 🟢 ≥75% Safe &nbsp;🟡 65–74% Warning &nbsp;🔴 &lt;65% Defaulter</p>
+        {% if not attendance_records %}
+        <div class="text-center py-10 rounded-xl border-2 border-dashed border-slate-100">
+          <p class="text-sm text-slate-400">No attendance data yet. Mark some sessions first.</p>
+        </div>
+        {% else %}
+        <div class="overflow-x-auto rounded-xl border border-slate-100">
+          <table class="w-full text-sm">
+            <thead><tr class="bg-slate-50 border-b border-slate-100">
+              <th class="text-left text-xs font-semibold text-slate-500 px-4 py-3 whitespace-nowrap">Student</th>
+              {% for subj in classroom_subjects %}
+              <th class="text-center text-xs font-semibold text-slate-500 px-3 py-3 whitespace-nowrap">{{ subj.code }}</th>
+              {% endfor %}
+            </tr></thead>
+            <tbody>
+              {% for u in students %}
+              {% set ustats = attendance_summary.get(u.id, {}) %}
+              <tr class="border-b border-slate-50 hover:bg-slate-50/60 transition-colors">
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center text-xs font-black text-indigo-600">{{ u.name[0].upper() if u.name else '?' }}</div>
+                    <div><p class="text-xs font-semibold text-slate-800">{{ u.name }}</p>{% if u.batch %}<p class="text-[10px] text-slate-400">Batch {{ u.batch }}</p>{% endif %}</div>
+                  </div>
+                </td>
+                {% for subj in classroom_subjects %}
+                {% set sdata = ustats.get(subj.id) %}
+                <td class="px-3 py-3 text-center">
+                  {% if sdata and sdata.total > 0 %}
+                    {% set pct = ((sdata.present / sdata.total) * 100) | round(1) %}
+                    <span class="text-xs font-bold px-2 py-0.5 rounded-full border
+                      {% if pct >= 75 %}bg-emerald-50 text-emerald-700 border-emerald-200
+                      {% elif pct >= 65 %}bg-amber-50 text-amber-700 border-amber-200
+                      {% else %}bg-red-50 text-red-600 border-red-200{% endif %}">{{ pct }}%</span>
+                    <p class="text-[10px] text-slate-400 mt-0.5">{{ sdata.present }}/{{ sdata.total }}</p>
+                  {% else %}<span class="text-slate-300 text-xs">—</span>{% endif %}
+                </td>
+                {% endfor %}
+              </tr>
+              {% else %}
+              <tr><td colspan="20" class="text-center py-8 text-sm text-slate-400">No students enrolled yet</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+
+
+
+
+
+    <!-- ── TEACHERS ── -->
+    <div id="pane-teachers" class="tab-pane hidden">
+
+
+      <div class="flex items-center justify-between mb-3">
+        <p class="text-sm font-semibold text-slate-700">Teachers in this Classroom</p>
+        <span class="text-xs font-bold bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full">{{ co_teachers|length }}</span>
+      </div>
+
+      {% for t in co_teachers %}
+      <div class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-violet-100 hover:bg-violet-50/30 mb-2 transition-all">
+        <div class="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center font-black text-violet-600 text-sm flex-shrink-0">
+          {{ t.name[0].upper() }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-slate-800">{{ t.name }}</p>
+          <p class="text-xs text-slate-500">{{ t.email }}</p>
+        </div>
+        {% if t.id == classroom.teacher_id %}
+        <span class="text-[10px] bg-indigo-50 text-indigo-600 border border-indigo-100 font-bold px-2 py-0.5 rounded-full uppercase">Owner</span>
+        {% else %}
+        {% endif %}
+      </div>
+      {% else %}
+      <div class="text-center py-12 rounded-xl border-2 border-dashed border-slate-100">
+        <i class="fas fa-chalkboard-teacher text-3xl text-slate-200 mb-2 block"></i>
+        <p class="text-sm text-slate-400">No co-teachers added yet</p>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div><!-- /p-6 -->
+</div>
+
+<script>
+/* ── Main tab switching ── */
+function showTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('tab-active'); b.classList.add('tab-inactive');
+  });
+  document.getElementById('pane-' + name).classList.remove('hidden');
+  const b = document.getElementById('tab-' + name);
+  b.classList.add('tab-active'); b.classList.remove('tab-inactive');
+}
+
+/* ── Attendance sub-tab switching ── */
+function showAttTab(name) {
+  document.querySelectorAll('.att-pane').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.att-tab').forEach(b => {
+    b.classList.remove('att-tab-active'); b.classList.add('att-tab-inactive');
+  });
+  document.getElementById('att-pane-' + name).classList.remove('hidden');
+  const b = document.getElementById('att-tab-' + name);
+  b.classList.add('att-tab-active'); b.classList.remove('att-tab-inactive');
+}
+
+/* ── Attendance history filter ── */
+function filterAtt(type) {
+  const rows = document.querySelectorAll('.att-row');
+  rows.forEach(row => {
+    const rType   = row.dataset.type;
+    const rStatus = row.dataset.status;
+    let show = false;
+    if (type === 'all')     show = true;
+    else if (type === 'lecture') show = (rType === 'lecture');
+    else if (type === 'lab')     show = (rType === 'lab');
+    else if (type === 'present') show = (rStatus === 'present');
+    else if (type === 'absent')  show = (rStatus === 'absent');
+    row.style.display = show ? '' : 'none';
+  });
+  document.querySelectorAll('.att-filter-btn').forEach(b => {
+    b.classList.remove('att-filter-active', 'bg-indigo-600', 'text-white', 'border-indigo-600');
+  });
+  event.target.classList.add('att-filter-active');
+}
+
+/* ── Lab batch switcher ── */
+function filterLabBatch(batch) {
+  document.querySelectorAll('.lab-batch-pane').forEach(p => p.style.display = 'none');
+  document.getElementById('lab-no-batch').style.display = 'none';
+  const saveBtn = document.getElementById('lab-save-btn');
+  if (batch) {
+    const pane = document.getElementById('lab-students-' + batch);
+    if (pane) pane.style.display = '';
+    if (saveBtn) saveBtn.classList.remove('hidden');
+  } else {
+    document.getElementById('lab-no-batch').style.display = '';
+    if (saveBtn) saveBtn.classList.add('hidden');
+  }
+}
+
+/* ── Open to tab from URL hash ── */
+const hash = window.location.hash.slice(1);
+if (hash) showTab(hash);
+
+/* ── Attendance helpers ── */
+function warnBackdate(warnId) {
+  const dateInput = event.target;
+  const warnText = document.getElementById(warnId);
+  if (!dateInput.value) return;
+
+  const selectedDate = new Date(dateInput.value);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const diffTime = Math.abs(today - selectedDate);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays > 7 && selectedDate < today) {
+    warnText.classList.remove('hidden');
+  } else {
+    warnText.classList.add('hidden');
+  }
+}
+function markAll(containerId, markPresent) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const checkboxes = container.querySelectorAll('input[type="checkbox"][name="present"]');
+  checkboxes.forEach(cb => { cb.checked = markPresent; });
+}
+/* ── Mark all in a specific form (used by live slot buttons) ── */
+function markAllInForm(formId, markPresent) {
+  const form = document.getElementById(formId);
+  if (!form) return;
+  form.querySelectorAll('input[type="checkbox"][name="present"]').forEach(cb => {
+    cb.checked = markPresent;
+  });
+}
+/* ── Live session countdowns ── */
+(function() {
+  const sessions = [
+    {% for slot in active_slots %}
+    { id: {{ slot.id }}, end: '{{ slot.end_time.strftime("%H:%M") }}' }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+  if (!sessions.length) return;
+  function tickCountdowns() {
+    const now = new Date();
+    let allExpired = true;
+    sessions.forEach(s => {
+      const el = document.getElementById('countdown-' + s.id);
+      if (!el) return;
+      const [h, m] = s.end.split(':').map(Number);
+      const end = new Date(); end.setHours(h, m, 0, 0);
+      const diff = Math.floor((end - now) / 1000);
+      if (diff <= 0) {
+        el.textContent = 'Session ended';
+        el.className = 'text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full';
+      } else {
+        allExpired = false;
+        const mm = String(Math.floor(diff/60)).padStart(2,'0');
+        const ss = String(diff % 60).padStart(2,'0');
+        el.textContent = mm + ':' + ss + ' left';
+      }
+    });
+    if (allExpired) {
+      // Reload page after 3 s so locked UI shows
+      setTimeout(() => window.location.reload(), 3000);
+    }
+  }
+  tickCountdowns();
+  setInterval(tickCountdowns, 1000);
+})();
+</script>
+<style>
+  .att-tab-active  { background:#4f46e5; color:#fff; }
+  .att-tab-inactive{ background:transparent; color:#64748b; }
+  .att-tab-inactive:hover { background:#f1f5f9; }
+  .att-filter-active { background:#4f46e5 !important; color:#fff !important; border-color:#4f46e5 !important; }
+</style>
+{% endblock %}
