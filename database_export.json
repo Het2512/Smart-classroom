@@ -1,0 +1,222 @@
+{
+  "system_configs": [
+    {
+      "id": 1,
+      "key": "faculty_code",
+      "value": "FACULTY2026"
+    }
+  ],
+  "users": [
+    {
+      "id": 11,
+      "name": "Admin",
+      "email": "admin@admin.com",
+      "role": "admin",
+      "semester": null,
+      "batch": null,
+      "password_hash": "scrypt:32768:8:1$tVkh7oH036jckbDO$05d8b770ff25ea5fbc072cad2cf7dc66e7776b0345d80cfd5feaad3cf46055042a66cf0a33e647cd04b189162c4baae2ea9808df7915190856237ae14a0d5ef2"
+    },
+    {
+      "id": 34,
+      "name": "Harsh Darji",
+      "email": "harsh",
+      "role": "student",
+      "semester": "Sem 3",
+      "batch": "A",
+      "password_hash": "scrypt:32768:8:1$lDTYf9xyDaCc6DMr$8cccb5005c7ca207fec0e9412bbfe8a4a677425d720bd49fb71eb8de91611f100e3a6195aecad4c9345aa7aa89ddf1f8216dcb59d656d34360cf32ed946674e8"
+    },
+    {
+      "id": 35,
+      "name": "Priya Shah",
+      "email": "priya",
+      "role": "student",
+      "semester": "Sem 3",
+      "batch": "B",
+      "password_hash": "scrypt:32768:8:1$jNpIwnDGEmBOUmkJ$e61de37fc6b2c9549b1777f913b8d01c8ae0fd7a9e3bc7273d9d593e095afe53e3c85b79a0a9e447bd3322588c2061fc99bb4700ff3466765a785949b4660269"
+    },
+    {
+      "id": 36,
+      "name": "Prof. Shah",
+      "email": "shah_prof",
+      "role": "teacher",
+      "semester": null,
+      "batch": null,
+      "password_hash": "scrypt:32768:8:1$IT9YPdAokM1xiB1K$d0f28d79ad9fe9bc5510db01281658b999a4d0da3402d044f133cfd6edb86a657131d1923e8e47e5612922975c1a312cd9a95012a2f2e4b792a76c9afda05a5f"
+    },
+    {
+      "id": 37,
+      "name": "Dr. Mehta",
+      "email": "mehta_dr",
+      "role": "teacher",
+      "semester": null,
+      "batch": null,
+      "password_hash": "scrypt:32768:8:1$l5RoudxAsgVf71KR$75870ec1a2a0b8b9b6d914baac1886fdfda386db20b0bc7e9dd2d209fcb0954b9fcc55d1c406ad7f16d31c2b323d0bc522ae954a5026a46a0eaf746adf288215"
+    },
+    {
+      "id": 38,
+      "name": "Harsh Darji",
+      "email": "harsh@example.com",
+      "role": "student",
+      "semester": "Sem 3",
+      "batch": "A",
+      "password_hash": "scrypt:32768:8:1$j5gyPJnySmAQf09P$67883fe9ad9f9f1a6ca74c346b50356ff7a29f03d71da4ff7e7a8ea46088163fde367a3c73aa33868ceb563d0e309593078985c6ac928c408ee6b417ca931310"
+    },
+    {
+      "id": 39,
+      "name": "test",
+      "email": "test1",
+      "role": "teacher",
+      "semester": null,
+      "batch": null,
+      "password_hash": "scrypt:32768:8:1$jedSIG8st3VFsrb4$21d862e415433b3aa7132da236a10f438a705a95a93a57d2aadfec973415df63a2e69fbaca8ca3846bbcf9bf268cb80c131233c204c0948988d679dcae33d6e3"
+    },
+    {
+      "id": 40,
+      "name": "Het",
+      "email": "darjihet2512@gmail.com",
+      "role": "student",
+      "semester": "Sem 6",
+      "batch": "A",
+      "password_hash": "scrypt:32768:8:1$HShY9GD5oCVgJ8LM$8638174d6ad05c9f5e5c684a6d526cd0d674c3688ad4c818fa455de6de56c399cda85175178e9db6d15a37384a59182ac65315f1d3f4175542b372caf4647e5d"
+    }
+  ],
+  "classrooms": [
+    {
+      "id": 4,
+      "name": "IT-61",
+      "description": "",
+      "semester": "Sem 6",
+      "teacher_id": null,
+      "created_at": "2026-05-18T08:15:56"
+    },
+    {
+      "id": 5,
+      "name": "IT-62",
+      "description": "",
+      "semester": "Sem 6",
+      "teacher_id": null,
+      "created_at": "2026-05-18T12:30:34"
+    },
+    {
+      "id": 6,
+      "name": "IT-31",
+      "description": "",
+      "semester": "3",
+      "teacher_id": null,
+      "created_at": "2026-05-18T12:44:05"
+    },
+    {
+      "id": 7,
+      "name": "Comp-1",
+      "description": "",
+      "semester": "Sem 6",
+      "teacher_id": 39,
+      "created_at": "2026-05-19T06:44:04"
+    }
+  ],
+  "classroom_teachers": [],
+  "allowed_students": [
+    {
+      "id": 1,
+      "email": "Het@gmail.com",
+      "name": null,
+      "added_by": null,
+      "classroom_id": null
+    },
+    {
+      "id": 2,
+      "email": "harshTank@gmail.com",
+      "name": null,
+      "added_by": null,
+      "classroom_id": null
+    },
+    {
+      "id": 3,
+      "email": "student@smartclass.com",
+      "name": "Test Student",
+      "added_by": null,
+      "classroom_id": null
+    },
+    {
+      "id": 4,
+      "email": "het123@gmail.com",
+      "name": null,
+      "added_by": null,
+      "classroom_id": null
+    },
+    {
+      "id": 5,
+      "email": "test1@gmail.com",
+      "name": "test 1",
+      "added_by": null,
+      "classroom_id": null
+    }
+  ],
+  "notes": [
+    {
+      "id": 1,
+      "title": "ddcet note",
+      "filename": "1000648615.pdf",
+      "uploaded_by": null,
+      "classroom_id": null,
+      "upload_date": "2026-05-07T07:16:17"
+    },
+    {
+      "id": 3,
+      "title": "DDCET",
+      "filename": "2025031315-1.pdf",
+      "uploaded_by": null,
+      "classroom_id": null,
+      "upload_date": "2026-05-08T14:33:29"
+    }
+  ],
+  "notices": [
+    {
+      "id": 1,
+      "title": "zklubgf a",
+      "content": "albdgcai",
+      "posted_by": null,
+      "classroom_id": null,
+      "posted_date": "2026-05-07T06:31:16",
+      "is_public": false
+    },
+    {
+      "id": 2,
+      "title": "Hieee",
+      "content": "hieee",
+      "posted_by": null,
+      "classroom_id": null,
+      "posted_date": "2026-05-07T11:17:49",
+      "is_public": false
+    },
+    {
+      "id": 3,
+      "title": "k;asdgdas",
+      "content": "aiduagdua",
+      "posted_by": null,
+      "classroom_id": null,
+      "posted_date": "2026-05-08T06:07:23",
+      "is_public": true
+    }
+  ],
+  "subjects": [
+    {
+      "id": 9,
+      "name": "Java Programming",
+      "code": "JV-302",
+      "semester": "Sem 3",
+      "teacher_id": 36
+    },
+    {
+      "id": 10,
+      "name": "Web Development",
+      "code": "WD-101",
+      "semester": "Sem 1",
+      "teacher_id": 37
+    }
+  ],
+  "attendance": [],
+  "timetable": [],
+  "exams": [],
+  "exam_results": []
+}
