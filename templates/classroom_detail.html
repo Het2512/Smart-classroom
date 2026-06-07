@@ -693,6 +693,11 @@
   </div><!-- /p-6 -->
 </div>
 
+<!-- JSON data island: passes Jinja data to JS without putting {{ }} inside <script> -->
+<script type="application/json" id="active-slots-data">
+  [{% for slot in active_slots %}{"id": {{ slot.id }}, "end": "{{ slot.end_time.strftime('%H:%M') }}"}{% if not loop.last %},{% endif %}{% endfor %}]
+</script>
+
 <script>
 /* ── Main tab switching ── */
 function showTab(name) {
@@ -790,34 +795,31 @@ function markAllInForm(formId, markPresent) {
 }
 /* ── Live session countdowns ── */
 (function() {
-  const sessions = [
-    {% for slot in active_slots %}
-    { id: {{ slot.id }}, end: '{{ slot.end_time.strftime("%H:%M") }}' }{% if not loop.last %},{% endif %}
-    {% endfor %}
-  ];
+  var dataEl = document.getElementById('active-slots-data');
+  var sessions = dataEl ? JSON.parse(dataEl.textContent) : [];
   if (!sessions.length) return;
   function tickCountdowns() {
-    const now = new Date();
-    let allExpired = true;
-    sessions.forEach(s => {
-      const el = document.getElementById('countdown-' + s.id);
+    var now = new Date();
+    var allExpired = true;
+    sessions.forEach(function(s) {
+      var el = document.getElementById('countdown-' + s.id);
       if (!el) return;
-      const [h, m] = s.end.split(':').map(Number);
-      const end = new Date(); end.setHours(h, m, 0, 0);
-      const diff = Math.floor((end - now) / 1000);
+      var parts = s.end.split(':').map(Number);
+      var end = new Date(); end.setHours(parts[0], parts[1], 0, 0);
+      var diff = Math.floor((end - now) / 1000);
       if (diff <= 0) {
         el.textContent = 'Session ended';
         el.className = 'text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full';
       } else {
         allExpired = false;
-        const mm = String(Math.floor(diff/60)).padStart(2,'0');
-        const ss = String(diff % 60).padStart(2,'0');
+        var mm = String(Math.floor(diff/60)).padStart(2,'0');
+        var ss = String(diff % 60).padStart(2,'0');
         el.textContent = mm + ':' + ss + ' left';
       }
     });
     if (allExpired) {
       // Reload page after 3 s so locked UI shows
-      setTimeout(() => window.location.reload(), 3000);
+      setTimeout(function() { window.location.reload(); }, 3000);
     }
   }
   tickCountdowns();

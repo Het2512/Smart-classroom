@@ -252,14 +252,18 @@ def delete_classroom(classroom_id):
     Notice.query.filter_by(classroom_id=classroom_id).update({'classroom_id': None})
     AllowedStudent.query.filter_by(classroom_id=classroom_id).update({'classroom_id': None})
     
-    # We must also handle subjects, exams, and timetables explicitly if DB lacks ON DELETE CASCADE
+    # We must also handle timetables and attendance explicitly if DB lacks ON DELETE CASCADE
     Attendance.query.filter_by(classroom_id=classroom_id).delete()
     Timetable.query.filter_by(classroom_id=classroom_id).delete()
-    
-    exams = Exam.query.filter_by(classroom_id=classroom_id).all()
-    for exam in exams:
-        ExamResult.query.filter_by(exam_id=exam.id).delete()
-        db.session.delete(exam)
+
+    # Exam has no classroom_id — find exams via subjects of this classroom's semester
+    if classroom.semester:
+        sem_subject_ids = [s.id for s in Subject.query.filter_by(semester=classroom.semester).all()]
+        if sem_subject_ids:
+            exams = Exam.query.filter(Exam.subject_id.in_(sem_subject_ids)).all()
+            for exam in exams:
+                ExamResult.query.filter_by(exam_id=exam.id).delete()
+                db.session.delete(exam)
         
     ClassroomTeacher.query.filter_by(classroom_id=classroom_id).delete()
 

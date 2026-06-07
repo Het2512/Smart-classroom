@@ -1,0 +1,214 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}Bulk Import Timetable{% endblock %}
+{% block header_title %}Bulk Import Timetable{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+  <!-- Page Title -->
+  <div>
+    <h1 class="text-2xl font-black text-slate-900">🗓️ Bulk Import Timetable</h1>
+    <p class="text-slate-500 text-sm mt-1">Upload an Excel or CSV file to add multiple timetable slots at once.</p>
+  </div>
+
+  <!-- Upload Card -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <h2 class="admin-card-title flex items-center gap-2">
+        <i class="fas fa-file-excel text-emerald-500"></i> Upload Timetable List
+      </h2>
+    </div>
+    <div style="padding: 1.5rem;">
+      <form action="{{ url_for('admin.bulk_import_timetable') }}" method="POST" enctype="multipart/form-data">
+        <div class="admin-form-group">
+          <label class="admin-label">Excel / CSV File</label>
+          <input type="file" name="file" accept=".xlsx,.xls,.csv" required
+            class="admin-input"
+            style="padding: 0.5rem;">
+          <p class="text-xs text-slate-400 mt-1">Accepted formats: <strong>.xlsx</strong>, <strong>.xls</strong>, <strong>.csv</strong></p>
+        </div>
+        <button type="submit" class="admin-btn admin-btn-primary" style="width:100%; margin-top:0.5rem;">
+          <i class="fas fa-upload mr-2"></i> Import Timetable
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Format Guide -->
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <h2 class="admin-card-title flex items-center gap-2">
+        <i class="fas fa-info-circle text-indigo-400"></i> Required File Format
+      </h2>
+    </div>
+    <div style="padding: 1.5rem;">
+      <p class="text-sm text-slate-600 mb-4">Your file must have a <strong>header row</strong> with the following column names (case-insensitive):</p>
+
+      <div style="overflow-x:auto;">
+        <table class="admin-table mb-4">
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Required?</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">classroom_name</code></td>
+              <td><span class="admin-badge" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;padding:2px 4px;border-radius:4px;font-size:10px;">Required</span></td>
+              <td>Name of the classroom. Must exist in DB.</td>
+              <td style="color:var(--admin-text-muted);">IT-Sem3</td>
+            </tr>
+            <tr>
+              <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">subject_code</code></td>
+              <td><span class="admin-badge" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;padding:2px 4px;border-radius:4px;font-size:10px;">Required</span></td>
+              <td>Code of the subject.</td>
+              <td style="color:var(--admin-text-muted);">CS301</td>
+            </tr>
+            <tr>
+              <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">day</code></td>
+              <td><span class="admin-badge" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;padding:2px 4px;border-radius:4px;font-size:10px;">Required</span></td>
+              <td>Day of the week</td>
+              <td style="color:var(--admin-text-muted);">Monday</td>
+            </tr>
+            <tr>
+              <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">start_time</code></td>
+              <td><span class="admin-badge" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;padding:2px 4px;border-radius:4px;font-size:10px;">Required</span></td>
+              <td>Start time (HH:MM)</td>
+              <td style="color:var(--admin-text-muted);">09:00</td>
+            </tr>
+            <tr>
+              <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">end_time</code></td>
+              <td><span class="admin-badge" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;padding:2px 4px;border-radius:4px;font-size:10px;">Required</span></td>
+              <td>End time (HH:MM)</td>
+              <td style="color:var(--admin-text-muted);">10:00</td>
+            </tr>
+            <tr>
+              <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">subject_name</code></td>
+              <td><span class="admin-badge" style="background:#f0fdf4;color:#22c55e;border:1px solid #bbf7d0;padding:2px 4px;border-radius:4px;font-size:10px;">Optional</span></td>
+              <td>Used to create subject if code not found</td>
+              <td style="color:var(--admin-text-muted);">Data Structures</td>
+            </tr>
+            <tr>
+              <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">session_type</code></td>
+              <td><span class="admin-badge" style="background:#f0fdf4;color:#22c55e;border:1px solid #bbf7d0;padding:2px 4px;border-radius:4px;font-size:10px;">Optional</span></td>
+              <td>lecture or lab (defaults to lecture)</td>
+              <td style="color:var(--admin-text-muted);">lab</td>
+            </tr>
+            <tr>
+              <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:12px;">batch</code></td>
+              <td><span class="admin-badge" style="background:#f0fdf4;color:#22c55e;border:1px solid #bbf7d0;padding:2px 4px;border-radius:4px;font-size:10px;">Optional</span></td>
+              <td>Batch for lab sessions (A, B, C)</td>
+              <td style="color:var(--admin-text-muted);">A</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Example preview -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:1rem;overflow-x:auto;">
+        <p class="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Example Excel layout:</p>
+        <table style="border-collapse:collapse;font-size:13px;width:100%;">
+          <tr style="background:#e0e7ff;">
+            <th style="border:1px solid #c7d2fe;padding:6px 12px;text-align:left;">classroom_name</th>
+            <th style="border:1px solid #c7d2fe;padding:6px 12px;text-align:left;">subject_code</th>
+            <th style="border:1px solid #c7d2fe;padding:6px 12px;text-align:left;">day</th>
+            <th style="border:1px solid #c7d2fe;padding:6px 12px;text-align:left;">start_time</th>
+            <th style="border:1px solid #c7d2fe;padding:6px 12px;text-align:left;">end_time</th>
+          </tr>
+          <tr>
+            <td style="border:1px solid #e2e8f0;padding:6px 12px;">IT-Sem3</td>
+            <td style="border:1px solid #e2e8f0;padding:6px 12px;">CS301</td>
+            <td style="border:1px solid #e2e8f0;padding:6px 12px;">Monday</td>
+            <td style="border:1px solid #e2e8f0;padding:6px 12px;">09:00</td>
+            <td style="border:1px solid #e2e8f0;padding:6px 12px;">10:00</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  {% if results %}
+  <div class="admin-card">
+    <div class="admin-card-header">
+      <h2 class="admin-card-title">Import Results</h2>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <span class="admin-badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;padding:2px 4px;border-radius:4px;font-size:10px;">
+          ✅ {{ results.created|length }} Created
+        </span>
+        <span class="admin-badge" style="background:#fffbeb;color:#d97706;border:1px solid #fde68a;padding:2px 4px;border-radius:4px;font-size:10px;">
+          ⚠️ {{ results.skipped|length }} Skipped
+        </span>
+        <span class="admin-badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;padding:2px 4px;border-radius:4px;font-size:10px;">
+          ❌ {{ results.errors|length }} Errors
+        </span>
+      </div>
+    </div>
+    <div style="padding:1.5rem;">
+
+      {% if results.created %}
+      <p class="text-sm font-bold text-emerald-700 mb-2">✅ Successfully Created ({{ results.created|length }})</p>
+      <div style="overflow-x:auto;margin-bottom:1.5rem;">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Row</th><th>Classroom</th><th>Subject</th><th>Day</th><th>Time</th></tr>
+          </thead>
+          <tbody>
+            {% for r in results.created %}
+            <tr>
+              <td style="color:var(--admin-text-muted);">{{ r.row }}</td>
+              <td style="font-weight:500;">{{ r.classroom }}</td>
+              <td>{{ r.subject }}</td>
+              <td>{{ r.day }}</td>
+              <td>{{ r.time }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if results.skipped %}
+      <p class="text-sm font-bold text-amber-700 mb-2">⚠️ Skipped — Already Exists ({{ results.skipped|length }})</p>
+      <div style="overflow-x:auto;margin-bottom:1.5rem;">
+        <table class="admin-table">
+          <thead><tr><th>Row</th><th>Detail</th></tr></thead>
+          <tbody>
+            {% for r in results.skipped %}
+            <tr>
+              <td style="color:var(--admin-text-muted);">{{ r.row }}</td>
+              <td style="color:#d97706;">{{ r.detail }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      {% if results.errors %}
+      <p class="text-sm font-bold text-red-700 mb-2">❌ Errors ({{ results.errors|length }})</p>
+      <div style="overflow-x:auto;">
+        <table class="admin-table">
+          <thead><tr><th>Row</th><th>Error</th></tr></thead>
+          <tbody>
+            {% for r in results.errors %}
+            <tr>
+              <td style="color:var(--admin-text-muted);">{{ r.row }}</td>
+              <td style="color:#dc2626;">{{ r.detail }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

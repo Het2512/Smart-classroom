@@ -47,6 +47,21 @@
             flex-direction: column;
             min-height: 100vh;
         }
+
+        /* Custom scrollbar for sidebar nav */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 
@@ -62,7 +77,7 @@
                 <span>Smart<span class="text-brand-400">Class</span></span>
             </div>
 
-            <nav class="flex-1 py-4 flex flex-col gap-1 px-3">
+            <nav class="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto custom-scrollbar">
                 {% if current_user.role == 'admin' %}
                 <!-- Admin Navigation -->
                 <p class="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-2">Admin Panel</p>
@@ -105,6 +120,10 @@
                 <a href="{{ url_for('admin.bulk_import_teachers') }}"
                     class="admin-sidebar-link {% if request.endpoint == 'admin.bulk_import_teachers' %}active{% endif %} rounded-lg">
                     <i class="fas fa-chalkboard-teacher w-5 text-center"></i> Bulk Teacher Import
+                </a>
+                <a href="{{ url_for('admin.bulk_import_timetable') }}"
+                    class="admin-sidebar-link {% if request.endpoint == 'admin.bulk_import_timetable' %}active{% endif %} rounded-lg">
+                    <i class="fas fa-calendar-plus w-5 text-center"></i> Bulk Timetable Import
                 </a>
 
                 {% elif current_user.role == 'teacher' %}

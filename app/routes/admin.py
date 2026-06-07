@@ -217,11 +217,15 @@ def delete_classroom(id):
     
     Attendance.query.filter_by(classroom_id=id).delete()
     Timetable.query.filter_by(classroom_id=id).delete()
-    
-    exams = Exam.query.filter_by(classroom_id=id).all()
-    for exam in exams:
-        ExamResult.query.filter_by(exam_id=exam.id).delete()
-        db.session.delete(exam)
+
+    # Exam has no classroom_id — find exams via subjects of this classroom's semester
+    if classroom.semester:
+        sem_subject_ids = [s.id for s in Subject.query.filter_by(semester=classroom.semester).all()]
+        if sem_subject_ids:
+            exams = Exam.query.filter(Exam.subject_id.in_(sem_subject_ids)).all()
+            for exam in exams:
+                ExamResult.query.filter_by(exam_id=exam.id).delete()
+                db.session.delete(exam)
         
     ClassroomTeacher.query.filter_by(classroom_id=id).delete()
 
@@ -682,3 +686,161 @@ def bulk_import_teachers():
         results = {'created': created, 'skipped': skipped, 'errors': errors}
 
     return render_template('admin/bulk_import_teachers.html', results=results)
+
+@admin_bp.route('/timetable/bulk-import', methods=['GET', 'POST'])
+@admin_required
+def bulk_import_timetable():
+    """
+    Accepts an Excel file (.xlsx / .xls) or CSV with columns:
+        classroom_name | subject_code | subject_name (opt) | day | start_time | end_time | session_type (opt) | batch (opt)
+    """
+    results = None
+
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            flash('Please select an Excel or CSV file.', 'danger')
+            return redirect(url_for('admin.bulk_import_timetable'))
+
+        ext = file.filename.rsplit('.', 1)[-1].lower()
+        if ext not in ('xlsx', 'xls', 'csv'):
+            flash('Only .xlsx, .xls or .csv files are accepted.', 'danger')
+            return redirect(url_for('admin.bulk_import_timetable'))
+
+        try:
+            raw = file.read()
+            if ext == 'csv':
+                df = pd.read_csv(io.BytesIO(raw))
+            else:
+                df = pd.read_excel(io.BytesIO(raw))
+        except Exception as e:
+            flash(f'Could not read file: {e}', 'danger')
+            return redirect(url_for('admin.bulk_import_timetable'))
+
+        df.columns = [c.strip().lower().replace(' ', '_') for c in df.columns]
+
+        required_cols = {'classroom_name', 'subject_code', 'day', 'start_time', 'end_time'}
+        if not required_cols.issubset(set(df.columns)):
+            flash(
+                f'File must have at least {", ".join(required_cols)} columns. '
+                f'Found: {", ".join(df.columns)}',
+                'danger'
+            )
+            return redirect(url_for('admin.bulk_import_timetable'))
+
+        created  = []
+        skipped  = []
+        errors   = []
+
+        _EMPTY_VALS = {'', 'nan', 'none', 'n/a', 'na', '-', '(empty)', 'null'}
+
+        def _clean(val):
+            s = str(val).strip()
+            return None if s.lower() in _EMPTY_VALS else s
+
+        for idx, row in df.iterrows():
+            row_num = idx + 2
+            try:
+                classroom_name = _clean(row.get('classroom_name', ''))
+                subject_code   = _clean(row.get('subject_code', ''))
+                subject_name   = _clean(row.get('subject_name', ''))
+                day            = _clean(row.get('day', ''))
+                start_time_str = _clean(row.get('start_time', ''))
+                end_time_str   = _clean(row.get('end_time', ''))
+                session_type   = _clean(row.get('session_type', 'lecture'))
+                batch          = _clean(row.get('batch', ''))
+
+                if not all([classroom_name, subject_code, day, start_time_str, end_time_str]):
+                    errors.append({'row': row_num, 'detail': 'Missing required fields'})
+                    continue
+
+                classroom = Classroom.query.filter_by(name=classroom_name).first()
+                if not classroom:
+                    errors.append({'row': row_num, 'detail': f'Classroom "{classroom_name}" not found'})
+                    continue
+
+                subject = Subject.query.filter_by(code=subject_code).first()
+                if not subject:
+                    if not subject_name:
+                        errors.append({'row': row_num, 'detail': f'Subject "{subject_code}" not found, and no subject_name provided to create it.'})
+                        continue
+                    
+                    teacher = User.query.filter_by(role='teacher').first()
+                    subject = Subject(
+                        name=subject_name,
+                        code=subject_code,
+                        semester=classroom.semester if classroom.semester else "Sem 1",
+                        teacher_id=teacher.id if teacher else 1
+                    )
+                    db.session.add(subject)
+                    db.session.flush()
+
+                from datetime import datetime
+                try:
+                    start_time = datetime.strptime(str(start_time_str), '%H:%M').time()
+                except ValueError:
+                    try:
+                        start_time = datetime.strptime(str(start_time_str), '%H:%M:%S').time()
+                    except ValueError:
+                        errors.append({'row': row_num, 'detail': f'Invalid start_time format: {start_time_str}'})
+                        continue
+                        
+                try:
+                    end_time = datetime.strptime(str(end_time_str), '%H:%M').time()
+                except ValueError:
+                    try:
+                        end_time = datetime.strptime(str(end_time_str), '%H:%M:%S').time()
+                    except ValueError:
+                        errors.append({'row': row_num, 'detail': f'Invalid end_time format: {end_time_str}'})
+                        continue
+
+                # Check if slot already exists to prevent exact duplicates
+                existing_slot = Timetable.query.filter_by(
+                    classroom_id=classroom.id,
+                    subject_id=subject.id,
+                    day_of_week=day.capitalize(),
+                    start_time=start_time,
+                    end_time=end_time,
+                    batch=batch
+                ).first()
+
+                if existing_slot:
+                    skipped.append({'row': row_num, 'detail': 'Slot already exists'})
+                    continue
+
+                new_slot = Timetable(
+                    classroom_id=classroom.id,
+                    subject_id=subject.id,
+                    day_of_week=day.capitalize(),
+                    start_time=start_time,
+                    end_time=end_time,
+                    session_type=session_type.lower() if session_type else 'lecture',
+                    batch=batch
+                )
+                db.session.add(new_slot)
+                db.session.flush()
+
+                created.append({
+                    'row': row_num, 
+                    'classroom': classroom.name, 
+                    'subject': subject.name,
+                    'day': day.capitalize(),
+                    'time': f"{start_time.strftime('%H:%M')} - {end_time.strftime('%H:%M')}"
+                })
+
+            except Exception as e:
+                db.session.rollback()
+                errors.append({'row': row_num, 'detail': str(e)})
+
+        db.session.commit()
+
+        if created:
+            flash(f'✅ {len(created)} timetable slot(s) imported successfully.', 'success')
+        if skipped:
+            flash(f'⚠️ {len(skipped)} slot(s) skipped (already exist).', 'warning')
+        if errors:
+            flash(f'❌ {len(errors)} row(s) had errors.', 'danger')
+
+        results = {'created': created, 'skipped': skipped, 'errors': errors}
+
+    return render_template('admin/bulk_import_timetable.html', results=results)
